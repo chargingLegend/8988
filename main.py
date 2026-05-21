@@ -151,8 +151,7 @@ class Wizard:
         "Harden": (0, 0, "arcane", "air becomes stone. Not at {target}."),
         "Gild": (2, 6, "arcane", "{target}'s edges turn brittle-gold, then crack.")
       }
-    print(f"\nSpellbook opens: {self.spells} | Manabda: {self.manabda}")
-    print("A voice, not your own, scrapes the inside of your skull: 'The ledger awakens.'")
+
 
   def cast_manabda(self, spell_name, target=None):
     if spell_name not in self.spells:
@@ -207,6 +206,9 @@ def simple_combat(player, enemy):
       if not player.is_alive():
         break
   print("\n=== COMBAT ENDS ===")
+
+  print(f"\nSpellbook opens: {self.spells} | Manabda: {self.manabda}")
+  print("A voice, not your own, scrapes the inside of your skull: 'The ledger awakens.'")
 
 # --- The Ritual Begins ---
 print("The  stone terminal in front you is cold. Dark. Silent.")
