@@ -1,12 +1,12 @@
 import random
 
 class Monster:
-  def __init__(self, name="Unknown", hp=10, desc="A creature."):
+  def __init__(self, name="Unknown", hp=10, desc="A creature.", exp_value=0):
     self.name = name
     self.hp = hp
     self.desc = desc
     self.status = []
-
+    self.exp_value = exp_value
 
   def __repr__(self):
     return f"{self.name} - HP: {self.hp} - {self.desc}"
@@ -24,7 +24,7 @@ class Monster:
 
 class RavenSwarm(Monster):
   def __init__(self, name="Raven Swarm", hp=15, desc="Not birds. Too many eyes. Too much hunger."):
-    super().__init__(name, hp, desc)
+    super().__init__(name, hp, desc, exp_value=50)
     self.attack_dmg = (1, 4)
     self.dmg_type = "piercing"
 
@@ -209,13 +209,13 @@ def simple_combat(player, enemy):
 if __name__ == "__main__":
   print("A voice, not your own, scrapes the inside of your skull: 'The ledger awakens.'")
 
-# --- The Ritual Begins ---
+  # --- The Ritual Begins ---
   print("The  stone terminal in front you is cold. Dark. Silent.")
   print("it waits,just a few steps in front of you,the start of your career as a true wizard,aiming to rule the path")
   print("A prompt blinks across the top of it in red letters, It wants a name.")
   player_name = input("Enter True Name: ")
   player = Wizard(name=player_name)
-  print(f"\nSpellbook opens: {self.spells} | Manabda: {self.manabda}")
+  print(f"\nSpellbook opens: {player.spells} | Manabda: {player.manabda}")
   print(f"\n{player}")
   print("\nYou are alone. The mountain air bites.")
   print(" more letters appear afterwards : Power has a price. The price has a name.")
