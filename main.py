@@ -206,8 +206,7 @@ def simple_combat(player, enemy):
       if not player.is_alive():
         break
   print("\n=== COMBAT ENDS ===")
-if name __name__ == "__main__":
-  print(f"\nSpellbook opens: {self.spells} | Manabda: {self.manabda}")
+if __name__ == "__main__":
   print("A voice, not your own, scrapes the inside of your skull: 'The ledger awakens.'")
 
 # --- The Ritual Begins ---
@@ -216,6 +215,7 @@ if name __name__ == "__main__":
   print("A prompt blinks across the top of it in red letters, It wants a name.")
   player_name = input("Enter True Name: ")
   player = Wizard(name=player_name)
+  print(f"\nSpellbook opens: {self.spells} | Manabda: {self.manabda}")
   print(f"\n{player}")
   print("\nYou are alone. The mountain air bites.")
   print(" more letters appear afterwards : Power has a price. The price has a name.")
