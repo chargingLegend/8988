@@ -1,5 +1,27 @@
 import random
 
+class inventory:
+  def __init__(self):
+    self.items = []
+    self.max_size = 12
+
+  def add(self, item):
+    if len(self.items) >= self.max_size:
+      raise Exception("Inventory full, cant carry anymore!")
+    self.items.append(item)
+    return f"Added {item} to inventory"
+
+  def remove(self, item):
+    if item in self.items:
+      self.items.remove(item)
+      return f"Used {item}."
+    raise ValueError(f"{item} not in inventory.")
+
+  def __str__(self):
+    if not self.items:
+      return "Inventory is empty."
+    return "Inventory: "+", ".join(self.items)
+
 class Monster:
   def __init__(self, name="Unknown", hp=10, desc="A creature.", exp_value=0):
     self.name = name
@@ -33,8 +55,15 @@ class RavenSwarm(Monster):
     print(f"{self.name} swarms! Beaks and claws rake for {dmg}!")
     target.take_damage(dmg, self.dmg_type)
 
+Mountain = {
+  "name" : "Moutainside",
+  "common" : ["Rock", "Snow", "Stick"],
+  "uncommon" : ["Mountain Herb"],
+  "rare" : ["Ancient coin"],
+}
+
 class Wizard:
-  def __init__(self, name, level=1, hp=100, school="Undecided", spells=None, manabda=3):
+  def __init__(self, name, level=1, hp=100, school="Undecided", spells=None, manabda=8):
     self.name = name
     self.level = level
     self.hp = hp
@@ -152,6 +181,27 @@ class Wizard:
         "Gild": (2, 6, "arcane", "{target}'s edges turn brittle-gold, then crack.")
       }
 
+  def learn_spell_sort(self, method="gift"):
+    if "sort" not in self.known_spells:
+      self.known_spells.append("sort")
+      self.sort_acquired_by = method
+      return "The runes on your palm shift. You understand how to use the rune to 'sort' now."
+    return "You already understand the sort spell"
+
+  def sort(self, location: dict):
+    if "sort" not in self.spells:
+      raise AttributeError("You trace the rune to be able to use the 'sort' ability, but it doesnt mean anything to you.not yet")
+    found = random.sample(location["common"], k=2)
+
+    if random.random() < 0.10:
+      found.append(random.choice(location["uncommon"]))
+
+    for item in found:
+      self.inventory.add(item)
+
+    print(f"you focus on the Rune of sort")
+    print(f"Found: {', ' .join(found)}")
+    print(self.inventory)
 
   def cast_manabda(self, spell_name, target=None):
     if spell_name not in self.spells:
