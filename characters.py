@@ -1,7 +1,8 @@
 import random
+from Inventory import Inventory
 
 class Wizard:
-  def __init__(self, name, level=1, hp=100, school="Undecided", spells=None, manabda=8):
+  def __init__(self, name, level=1, hp=100, school="Undecided", spells=None, manabda=8, inventory=None):
     self.name = name
     self.level = level
     self.hp = hp
@@ -9,6 +10,7 @@ class Wizard:
     self.manabda = manabda
     self.spells = spells if spells is not None else []
     self.spell_data = {}
+    self.inventory = inventory if inventory is not None else Inventory()
 
 
   def __repr__(self):
