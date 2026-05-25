@@ -1,5 +1,6 @@
 import random
 from Inventory import Inventory
+from systems.status_effects import Burn
 
 class Wizard:
   def __init__(self, name, level=1, hp=100, school="Undecided", spells=None, manabda=8, inventory=None):
@@ -27,7 +28,7 @@ class Wizard:
     if not self.is_alive():
       print(f"{self.name} falls.")
 
-  def ass_status(self, status_effect):
+  def add_status(self, status_effect):
         self.status_effects.append(status_effect)
 
   def tick_status_effects(self):
@@ -135,8 +136,8 @@ class Wizard:
       }
 
   def learn_spell_sort(self, method="gift"):
-    if "sort" not in self.known_spells:
-      self.known_spells.append("sort")
+    if "sort" not in self.spells:
+      self.spells.append("sort")
       self.sort_acquired_by = method
       return "The runes on your palm shift. You understand how to use the rune to 'sort' now."
     return "You already understand the sort spell"
@@ -188,11 +189,24 @@ class Wizard:
     print(f"{self.name} weaves: '{spell_name}'!")
     print(desc.format(target=target.name))
     target.take_damage(dmg, dmg_type)
+    if spell_name == "Ignite" and random.random() < 0.5:
+      burn = Burn(duration=3, damage_per_turn=5)
+      target.add_status(burn)
+      print(f"{target.name} catches fire!")
     return True
 
 def simple_combat(player, enemy):
   print(f"\n=== COMBAT: {player.name} vs {enemy.name} ===")
   while player.is_alive() and enemy.is_alive():
+
+    player_msgs = player.tick_status_effects()
+    if player_msgs: print(player_msgs)
+    if not player.is_alive(): break
+
+    enemy_msgs = enemy.tick_status_effects()
+    if enemy_msgs: print(enemy_msgs)
+    if not enemy.is_alive(): break
+
     print(f"\n{player}")
     print(f"{enemy}")
     print(f"Your spells: {player.spells} | Manabda: {player.manabda}")

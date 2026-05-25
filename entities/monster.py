@@ -22,7 +22,7 @@ class Monster:
     if not self.is_alive():
       print(f"{self.name} falls.")
 
-  def ass_status(self, status_effect):
+  def add_status(self, status_effect):
     self.status_effects.append(status_effect)
 
   def tick_status_effects(self):
