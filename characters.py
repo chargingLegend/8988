@@ -11,7 +11,7 @@ class Wizard:
     self.spells = spells if spells is not None else []
     self.spell_data = {}
     self.inventory = inventory if inventory is not None else Inventory()
-
+    self.status_effects = []
 
   def __repr__(self):
     return f"Wizard({self.name}) - HP: {self.hp} - School: {self.school} - Spells: {len(self.spells)}/5 - Manabda: {self.manabda}"
@@ -26,6 +26,19 @@ class Wizard:
     print(f"{self.name} takes {dmg} {dmg_type} damage! HP: {self.hp}")
     if not self.is_alive():
       print(f"{self.name} falls.")
+
+  def ass_status(self, status_effect):
+        self.status_effects.append(status_effect)
+
+  def tick_status_effects(self):
+    messages = []
+    for effect in self.status_effects[:]:
+      result = effect.tick(self)
+      if result:
+        messages.append(result)
+      if effect.is_expired():
+        self.status_effects.remove(effect)
+    return "\n".join(messages)
 
   def choose_school(self, school):
     self.school = school

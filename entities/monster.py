@@ -5,7 +5,7 @@ class Monster:
     self.name = name
     self.hp = hp
     self.desc = desc
-    self.status = []
+    self.status_effects = []
     self.exp_value = exp_value
 
   def __repr__(self):
@@ -21,6 +21,21 @@ class Monster:
     print(f"{self.name} takes {dmg} {dmg_type} damage! HP: {self.hp}")
     if not self.is_alive():
       print(f"{self.name} falls.")
+
+  def ass_status(self, status_effect):
+    self.status_effects.append(status_effect)
+
+  def tick_status_effects(self):
+    messages = []
+    for effect in self.status_effects[:]:
+      result = effect.tick(self)
+      if result:
+        messages.append(result)
+      if effect.is_expired():
+        self.status_effects.remove(effect)
+    return "\n".join(messages)
+
+
 
 class RavenSwarm(Monster):
   def __init__(self, name="Raven Swarm", hp=15, desc="Not birds. Too many eyes. Too much hunger."):
