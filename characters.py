@@ -3,7 +3,7 @@ from Inventory import Inventory
 from systems.status_effects import Burn
 
 class Wizard:
-  def __init__(self, name, level=1, hp=100, school="Undecided", spells=None, manabda=8, inventory=None):
+  def __init__(self, name: str, level: int = 1, hp: int = 100, school: str = "Undecided", spells: list[str] | None = None, manabda: int = 8, inventory: Inventory | None = None) -> None:
     self.name = name
     self.level = level
     self.hp = hp
@@ -14,13 +14,17 @@ class Wizard:
     self.inventory = inventory if inventory is not None else Inventory()
     self.status_effects = []
 
-  def __repr__(self):
+  def __repr__(self) -> str:
     return f"Wizard({self.name}) - HP: {self.hp} - School: {self.school} - Spells: {len(self.spells)}/5 - Manabda: {self.manabda}"
 
-  def is_alive(self):
+  def __str__(self) -> str:
+    status = "alive" if self.is_alive() else "Fallen"
+    return f"{self.name} the {self.school} Wizard | {status} | HP: {self.hp} | Manabda: {self.manabda}/8 | Spells: {len(self.spells)}"
+
+  def is_alive(self) -> bool:
     return self.hp > 0
 
-  def take_damage(self, dmg, dmg_type="physical"):
+  def take_damage(self, dmg, dmg_type="physical")-> None:
     self.hp -= dmg
     if self.hp < 0:
       self.hp = 0

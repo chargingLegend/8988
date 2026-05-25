@@ -3,14 +3,6 @@ from entities.monster import RavenSwarm
 
 
 
-Mountain = {
-  "name" : "Moutainside",
-  "common" : ["Rock", "Snow", "Stick"],
-  "uncommon" : ["Mountain Herb"],
-  "rare" : ["Ancient coin"],
-}
-
-
 if __name__ == "__main__":
   print("A voice, not your own, scrapes the inside of your skull: 'The ledger awakens.'")
 
