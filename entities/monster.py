@@ -73,6 +73,11 @@ class Monster:
   def on_spawn(self):
     return f"A wild {self.name} appears!"
 
+
+
+
+
+
 class Rat(Monster):
   def __init__(self):
     super().__init__(name="Rat", hp=5, desc="A diseased sewer dweller.",
@@ -220,3 +225,16 @@ class TrollKing(Monster):
     print(f"{self.name} brings down a massive fist on {target.name} for {dmg}!")
     target.take_damage(dmg, "bludgeoning")
     return dmg
+
+  MONSTER_DB = {
+    "Rat": Rat,
+    "Bat": Bat,
+    "Goblin": Goblin,
+    "Raven Swarm": RavenSwarm,
+    "Wolf": Wolf,
+    "Skeleton": Skeleton,
+    "Giant Spider": Spider,
+    "Cave Troll": CaveTroll,
+    "Wraith": Wraith,
+    "Troll King": TrollKing
+  }

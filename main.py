@@ -67,6 +67,7 @@ if __name__ == "__main__":
     combat = RavenSwarm()
     simple_combat(player, combat)
     if player.is_alive():
+      player.gain_exp(combat.exp_value)
       print("\nThe ravens scatter... for now.")
       print("The man stands. Medium build, average height. Mop of messy blonde hair hides his eyes.")
       print("The woman cowers behind him. Homely. Quiet. Hands over her head.")
