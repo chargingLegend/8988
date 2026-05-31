@@ -29,3 +29,23 @@ class Burn(StatusEffect):
     if not self.is_expired() and result:
       result += "\nThe flames crackle hungrily."
     return result
+
+class Scorched(StatusEffect):
+  def __init__(self, duration=2, damage_per_turn=3):
+    super().__init__("Scorched", duration, damage_per_turn)
+
+  def tick(self, target):
+    result = super().tick(target)
+    if not self.is_expired() and result:
+      result += "\nThe heat is building. Something is about to give."
+    return result
+
+class Combusting(StatusEffect):
+  def __init__(self, duration=4, damage_per_turn=10):
+      super().__init__("Combusting", duration, damage_per_turn)
+
+  def tick(self, target):
+    result = super().tick(target)
+    if not self.is_expired() and result:
+      result += "\nFully ablaze. The screaming is secondary to the crackling."
+    return result

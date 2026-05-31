@@ -2,7 +2,7 @@ import random
 
 class Monster:
   def __init__(self, name="Unknown", hp=10, desc="A creature.", exp_value=0,
-               atk=1, defense=0, level=1, gold_reward=0, loot_table=None, abilities=None):
+               atk=1, defense=0, level=1, gold_reward=0, loot_table=None, abilities=None, age=None, flame_resistance=None):
     self.name = name
     self.hp = hp
     self.max_hp = hp
@@ -15,6 +15,8 @@ class Monster:
     self.gold_reward = gold_reward
     self.loot_table = loot_table or []
     self.abilities = abilities or []
+    self.age = age
+    self.flame_resistance = flame_resistance
 
   def __repr__(self):
     return f"{self.name}(HP:{self.hp}/{self.max_hp}, LVL:{self.level}, ATK:{self.atk})"
@@ -109,7 +111,7 @@ class Goblin(Monster):
     super().__init__(name="Goblin", hp=12, desc="A small, green-skinned scavenger.",
                      exp_value=8, level=2, atk=4, defense=1, gold_reward=3,
                      loot_table=[("Rusty Dagger", 30), ("Goblin Ear", 50)],
-                     abilities=["Stab", "Loot Throw"])
+                     abilities=["Stab", "Loot Throw"],age = 20)
     self.stab_chance = 40
     self.stab_dmg = (2, 6)
 
@@ -191,7 +193,7 @@ class CaveTroll(Monster):
                      desc="A massive brute with regenerative flesh.",
                      exp_value=35, level=8, atk=12, defense=3, gold_reward=15,
                      loot_table=[("Troll Hide", 40), ("Troll Blood", 15)],
-                     abilities=["Regenerate"])
+                     abilities=["Regenerate"], age = 45)
 
   def attack(self, target):
     dmg = random.randint(10, 14)
@@ -218,7 +220,7 @@ class TrollKing(Monster):
                      desc="The ruler of the deep caves. Ancient and furious.",
                      exp_value=150, level=15, atk=20, defense=6, gold_reward=75,
                      loot_table=[("King's Crown", 10), ("Troll Heart", 25), ("Ancient Bone", 40)],
-                     abilities=["Roar", "Regenerate"])
+                     abilities=["Roar", "Regenerate"], age = 55)
 
   def attack(self, target):
     dmg = random.randint(18, 22)

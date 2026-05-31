@@ -1,6 +1,6 @@
 import random
 from Inventory import Inventory
-from systems.status_effects import Burn
+from systems.status_effects import Burn, Scorched, Combusting
 
 class Wizard:
   def __init__(self, name: str, level: int = 1, hp: int = 100, school: str = "Undecided", spells: list[str] | None = None, manabda: int = 8, inventory: Inventory | None = None) -> None:
@@ -311,35 +311,225 @@ class Wizard:
     target.take_damage(dmg, "fire")
     return f"{target.name} loses half its essence! {dmg} dmg! Manabda: {self.manabda}"
 
-  def fast_forward_time(self, target, years=10):
-    cost = 8
-    self.check_manabda(cost)
+  def pyromancy_burn(self, target):
+    if self.school != "Pyromancy":
+      print("Only a Pyromancer can wield this heat.")
+      return False
+
+    if getattr(target, 'flame_resistance', None) is None:
+      print(f"{target.name} cannot be burned. The flame finds nothing to take.")
+      return False
+
+    print(f"\nFire answers your call.")
+    print(f"Your Manabda: {self.manabda}/8")
+    print(f"\nHow much heat do you pour into {target.name}?")
+    print(f"Their resistance: {target.flame_resistance}")
+    print("1. Kindle     (heat 10)  - costs 2 Manabda")
+    print("2. Sear       (heat 20)  - costs 4 Manabda")
+    print("3. Incinerate (heat 35)  - costs 6 Manabda")
+
+    if self.ability_upgrades.get("pyromancy_burn", 0) >= 1:
+      print("4. Inferno    (heat 60)  - costs ALL Manabda")
+
+    choice = input("Choose [1-4]: ").strip()
+
+    options = {
+      "1": (10, 2),
+      "2": (20, 4),
+      "3": (35, 6),
+    }
+
+    if self.ability_upgrades.get("pyromancy_burn", 0) >= 1:
+      options["4"] = (60, self.manabda)
+
+    if choice not in options:
+      print("The flame sputters out.")
+      return False
+
+    heat, cost = options[choice]
+
+    if self.manabda < cost:
+      print(f"The well runs dry. Need {cost} Manabda, have {self.manabda}.")
+      return False
+
     self.manabda -= cost
-    if hasattr(target, 'age'):
+
+    if heat >= target.flame_resistance * 2:
+      target.add_status(Combusting(duration=4, damage_per_turn=10))
+      dmg = random.randint(15, 25)
+      target.take_damage(dmg, "fire")
+      return (f"{target.name} ignites completely!\n"
+              f"{dmg} fire damage and fully Combusting!\n"
+              f"Manabda: {self.manabda}")
+
+    elif heat >= target.flame_resistance:
+      target.add_status(Scorched(duration=2, damage_per_turn=3))
+      dmg = random.randint(8, 15)
+      target.take_damage(dmg, "fire")
+      return (f"{target.name} is Scorched!\n"
+              f"{dmg} fire damage. The heat is building.\n"
+              f"Manabda: {self.manabda}")
+
+    else:
+      target.add_status(Burn(duration=3, damage_per_turn=5))
+      dmg = random.randint(3, 8)
+      target.take_damage(dmg, "fire")
+      return (f"Flames lick at {target.name}.\n"
+              f"{dmg} fire damage. Burning but not breaking.\n"
+              f"Manabda: {self.manabda}")
+
+  def fast_forward_time(self, target, years=None):
+    if self.school != "Chronomancy":
+      print("Only a Chronomancer can bend time.")
+      return False
+
+    print(f"\nThe flow of time bends to your will.")
+    print(f"Your Manabda: {self.manabda}/8")
+    print(f"\nHow far do you push {target.name} through time?")
+    print("1. A Score of Years  (20 years)  - costs 3 Manabda")
+    print("2. Two Generations   (40 years)  - costs 5 Manabda")
+    print("3. A Century         (100 years) - costs 8 Manabda")
+
+    if self.ability_upgrades.get("fast_forward_time", 0) >= 1:
+      print("4. Molecular Dissolution       - costs ALL Manabda")
+
+    choice = input("Choose [1-4]: ").strip()
+
+    options = {
+      "1": (20, 3),
+      "2": (40, 5),
+      "3": (100, 8),
+    }
+
+    if self.ability_upgrades.get("fast_forward_time", 0) >= 1:
+      options["4"] = (999, self.manabda)
+
+    if choice not in options:
+      print("The moment passes. Time snaps back.")
+      return False
+
+    years, cost = options[choice]
+
+    if self.manabda < cost:
+      print(f"The well runs dry. Need {cost} Manabda, have {self.manabda}.")
+      return False
+
+    self.manabda -= cost
+
+    if years == 999:
+      target.hp = 0
+      target.is_dust = True
+      return (f"{target.name} comes apart at the molecular level.\n"
+              f"They simply... cease. Manabda: {self.manabda}")
+
+    if hasattr(target, 'age') and target.age is not None:
       target.age += years
-      if target.age > 70:
+
+      if target.age >= 100:
+        target.atk = max(1, target.atk - 10)
+        target.hp = max(1, target.hp // 2)
+        return (f"{target.name} withers {years} years!\n"
+                f"Ancient now. Frail. Half the threat.\n"
+                f"Manabda: {self.manabda}")
+
+      elif target.age >= 40:
         target.atk = max(1, target.atk - 5)
-        return f"{target.name} withers {years} years! Frail now. Manabda: {self.manabda}"
+        return (f"{target.name} ages {years} years!\n"
+                f"Slower. Weaker. Still dangerous.\n"
+                f"Manabda: {self.manabda}")
+
+      else:
+        return (f"Time moves over {target.name}.\n"
+                f"They seem... unchanged. Was it enough?\n"
+                f"Manabda: {self.manabda}")
+
     elif hasattr(target, 'durability'):
-      target.durability -= years * 10
+      target.durability -= years * 5
       if target.durability <= 0:
         target.broken = True
+        target.is_dust = True
         return f"The {target.name} crumbles to dust. Manabda: {self.manabda}"
-    return f"Time rushes over {target.name}. Manabda: {self.manabda}"
+      return f"The {target.name} ages and weakens. Manabda: {self.manabda}"
 
-  def rewind_time(self, target, years=10):
-    cost = 8
-    self.check_manabda(cost)
+    return f"Time washes over {target.name}. Nothing changes. Manabda: {self.manabda}"
+
+  def rewind_time(self, target, years=None):
+    if self.school != "Chronomancy":
+      print("Only a Chronomancer can bend time.")
+      return False
+
+    if getattr(target, 'is_dust', False):
+      print(f"{target.name} is dust. Even time cannot restore what is gone.")
+      return False
+
+    print(f"\nTime coils backward at your command.")
+    print(f"Your Manabda: {self.manabda}/8")
+    print(f"\nHow far do you pull {target.name} back through time?")
+    print("1. A Score of Years  (20 years)  - costs 3 Manabda")
+    print("2. Two Generations   (40 years)  - costs 5 Manabda")
+    print("3. A Century         (100 years) - costs 8 Manabda")
+
+    if self.ability_upgrades.get("rewind_time", 0) >= 1:
+      print("4. Infant State                - costs ALL Manabda")
+
+    choice = input("Choose [1-4]: ").strip()
+
+    options = {
+      "1": (20, 3),
+      "2": (40, 5),
+      "3": (100, 8),
+    }
+
+    if self.ability_upgrades.get("rewind_time", 0) >= 1:
+      options["4"] = (999, self.manabda)
+
+    if choice not in options:
+      print("The moment passes. Time snaps forward again.")
+      return False
+
+    years, cost = options[choice]
+
+    if self.manabda < cost:
+      print(f"The well runs dry. Need {cost} Manabda, have {self.manabda}.")
+      return False
+
     self.manabda -= cost
-    if hasattr(target, 'age'):
+
+    if years == 999:
+      target.age = 0
+      target.atk = max(1, target.atk // 4)
+      target.hp = max(1, target.hp // 4)
+      return (f"{target.name} shrinks. Regresses. Becomes something small and helpless.\n"
+              f"Barely a threat. Manabda: {self.manabda}")
+
+    if hasattr(target, 'age') and target.age is not None:
       target.age = max(0, target.age - years)
-      target.atk += 2
-      return f"{target.name} grows {years} years younger! Manabda: {self.manabda}"
+
+      if target.age <= 0:
+        target.atk = max(1, target.atk // 4)
+        target.hp = max(1, target.hp // 4)
+        return (f"{target.name} regresses to infancy!\n"
+                f"Pathetic now. Almost harmless.\n"
+                f"Manabda: {self.manabda}")
+
+      elif target.age <= 10:
+        target.atk = max(1, target.atk // 2)
+        return (f"{target.name} becomes a youth!\n"
+                f"Weaker. Confused. Still has teeth though.\n"
+                f"Manabda: {self.manabda}")
+
+      else:
+        target.atk += 2
+        return (f"{target.name} grows younger by {years} years!\n"
+                f"Faster. Angrier. More dangerous.\n"
+                f"Manabda: {self.manabda}")
+
     elif hasattr(target, 'broken') and target.broken:
       target.broken = False
-      target.durability = target.max_durability
-      return f"The {target.name} un-breaks. Manabda: {self.manabda}"
-    return f"Time reverses for {target.name}. Manabda: {self.manabda}"
+      target.durability = getattr(target, 'max_durability', 100)
+      return f"The {target.name} un-breaks. Restored. Manabda: {self.manabda}"
+
+    return f"Time reverses around {target.name}. Nothing meaningful changes. Manabda: {self.manabda}"
 
   def enumerate_fates(self, targets):
     cost = 3
