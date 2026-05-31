@@ -284,6 +284,98 @@ class Wizard:
     print(f"Found: {', '.join(found)}")
     print(self.inventory)
 
+  def check_manabda(self, cost):
+    if self.manabda < cost:
+      raise ValueError(f"The well is dry. Have {self.manabda}, need {cost}.")
+
+  def map_fire(self, targets):
+    cost = 3
+    self.check_manabda(cost)
+    self.manabda -= cost
+    dmg = random.randint(3, 6) + self.ability_upgrades.get("map_fire", 0)
+    for t in targets:
+      t.take_damage(dmg, "fire")
+      if random.random() < 0.4:
+        t.add_status(Burn(duration=2, damage_per_turn=2))
+    return f"Fire spreads across {len(targets)} foes for {dmg} each! Manabda: {self.manabda}"
+
+  def reduce_ash(self, target):
+    cost = 5
+    self.check_manabda(cost)
+    self.manabda -= cost
+    threshold = 8 + self.ability_upgrades.get("reduce_ash", 0) * 2
+    if target.hp <= threshold:
+      target.hp = 0
+      return f"{target.name} turns to ash! Manabda: {self.manabda}"
+    dmg = target.hp // 2
+    target.take_damage(dmg, "fire")
+    return f"{target.name} loses half its essence! {dmg} dmg! Manabda: {self.manabda}"
+
+  def fast_forward_time(self, target, years=10):
+    cost = 8
+    self.check_manabda(cost)
+    self.manabda -= cost
+    if hasattr(target, 'age'):
+      target.age += years
+      if target.age > 70:
+        target.atk = max(1, target.atk - 5)
+        return f"{target.name} withers {years} years! Frail now. Manabda: {self.manabda}"
+    elif hasattr(target, 'durability'):
+      target.durability -= years * 10
+      if target.durability <= 0:
+        target.broken = True
+        return f"The {target.name} crumbles to dust. Manabda: {self.manabda}"
+    return f"Time rushes over {target.name}. Manabda: {self.manabda}"
+
+  def rewind_time(self, target, years=10):
+    cost = 8
+    self.check_manabda(cost)
+    self.manabda -= cost
+    if hasattr(target, 'age'):
+      target.age = max(0, target.age - years)
+      target.atk += 2
+      return f"{target.name} grows {years} years younger! Manabda: {self.manabda}"
+    elif hasattr(target, 'broken') and target.broken:
+      target.broken = False
+      target.durability = target.max_durability
+      return f"The {target.name} un-breaks. Manabda: {self.manabda}"
+    return f"Time reverses for {target.name}. Manabda: {self.manabda}"
+
+  def enumerate_fates(self, targets):
+    cost = 3
+    self.check_manabda(cost)
+    self.manabda -= cost
+    info = [f"{i}: {t.name} | HP:{t.hp} | ATK:{t.atk}" for i, t in enumerate(targets)]
+    return "Fates revealed:\n" + "\n".join(info) + f"\nManabda: {self.manabda}"
+
+  def transmute(self, target, new_material="gold"):
+    cost = 5
+    self.check_manabda(cost)
+    self.manabda -= cost
+    if getattr(target, 'is_animate', False):
+      raise ValueError("Can't transmute living things! Use polymorph.")
+    target.material = new_material
+    return f"{target.name} becomes {new_material}! Manabda: {self.manabda}"
+
+  def polymorph(self, target):
+    cost = 7
+    self.check_manabda(cost)
+    self.manabda -= cost
+    forms = [("Rabbit", 70), ("Bear", 20), ("Statue", 10)]
+    new_form = random.choices([f[0] for f in forms], weights=[f[1] for f in forms])[0]
+    target.polymorphed_form = new_form
+    return f"{target.name} becomes a {new_form}! Manabda: {self.manabda}"
+
+  def enhance_item(self, item_name):
+    cost = 4
+    self.check_manabda(cost)
+    self.manabda -= cost
+    result = self.inventory.upgrade(item_name)
+    return f"{result} Manabda: {self.manabda}"
+
+
+
+
   def cast_manabda(self, spell_name, target=None):
     if spell_name not in self.spells:
       print("The spell fizzles. You don't know it.")
