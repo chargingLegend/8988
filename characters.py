@@ -3,7 +3,8 @@ from Inventory import Inventory
 from systems.status_effects import Burn, Scorched, Combusting
 
 class Wizard:
-  def __init__(self, name: str, level: int = 1, hp: int = 100, school: str = "Undecided", spells: list[str] | None = None, manabda: int = 8, inventory: Inventory | None = None) -> None:
+  def __init__(self, name: str, level: int = 1, hp: int = 100, school: str = "Undecided",
+                spells: list[str] | None = None, manabda: int = 8, inventory: Inventory | None = None) -> None:
     self.name = name
     self.level = level
     self.hp = hp
@@ -531,6 +532,30 @@ class Wizard:
 
     return f"Time reverses around {target.name}. Nothing meaningful changes. Manabda: {self.manabda}"
 
+  def freeze(self, target):
+    cost = 4
+    self.check_manabda(cost)
+    self.manabda -= cost
+    duration = 2 + self.ability_upgrades.get("freeze", 0)
+    from systems.status_effects import Frozen
+    target.add_status(Frozen(duration=duration))
+    return (
+      f"Ice closes around {target.name}. It stops mid-motion.\n"
+      f"Frozen for {duration} turns. Manabda: {self.manabda}"
+    )
+
+  def cryo_preserve(self, target):
+    cost = 6
+    self.check_manabda(cost)
+    self.manabda -= cost
+    from systems.status_effects import Preserved
+    target.add_status(Preserved(duration=2))
+    target.preserved = True
+    return (
+      f"{target.name} is sealed in cryo-stasis. Its state is locked.\n"
+      f"Healing and buffs suspended for 2 turns. Manabda: {self.manabda}"
+    )
+
   def enumerate_fates(self, targets):
     cost = 3
     self.check_manabda(cost)
@@ -623,8 +648,12 @@ def simple_combat(player, enemy):
     if not enemy.is_alive():
       break
     if spell_hit:
-      print()
-      enemy.attack(player)
+        print()
+        is_frozen = any(type(e).__name__ == "Frozen" for e in enemy.status_effects)
+        if is_frozen:
+          print(f"{enemy.name} is frozen solid. It cannot act.")
+        else:
+          enemy.attack(player)
     if not player.is_alive():
       break
   print("\n=== COMBAT ENDS ===")
