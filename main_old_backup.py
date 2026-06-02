@@ -63,18 +63,18 @@ Mountain = {
 }
 
 class Wizard:
-  def __init__(self, name, level=1, hp=100, school="Undecided", spells=None, manabda=8):
+  def __init__(self, name, level=1, hp=100, school="Undecided", spells=None, mana=8):
     self.name = name
     self.level = level
     self.hp = hp
     self.school = school
-    self.manabda = manabda
+    self.mana = mana
     self.spells = spells if spells is not None else []
     self.spell_data = {}
 
 
   def __repr__(self):
-    return f"Wizard({self.name}) - HP: {self.hp} - School: {self.school} - Spells: {len(self.spells)}/5 - Manabda: {self.manabda}"
+    return f"Wizard({self.name}) - HP: {self.hp} - School: {self.school} - Spells: {len(self.spells)}/5 - mana: {self.mana}"
 
   def is_alive(self):
     return self.hp > 0
@@ -203,16 +203,16 @@ class Wizard:
     print(f"Found: {', ' .join(found)}")
     print(self.inventory)
 
-  def cast_manabda(self, spell_name, target=None):
+  def cast_mana(self, spell_name, target=None):
     if spell_name not in self.spells:
       print("The spell fizzles. You don't know it.")
       return False
-    if self.manabda == 0:
+    if self.mana == 0:
       print("Nothing happens. The well, from which you draw your power is dry.")
       return False
 
-    self.manabda -= 1
-    print(f"*Manabda burns. One less in the well.* Manabda left: {self.manabda}")
+    self.mana -= 1
+    print(f"*mana burns. One less in the well.* mana left: {self.mana}")
 
     min_dmg, max_dmg, dmg_type, desc = self.spell_data.get(spell_name, (1, 3, "arcane", "power lashes {target}."))
 
@@ -242,12 +242,12 @@ def simple_combat(player, enemy):
   while player.is_alive() and enemy.is_alive():
     print(f"\n{player}")
     print(f"{enemy}")
-    print(f"Your spells: {player.spells} | Manabda: {player.manabda}")
+    print(f"Your spells: {player.spells} | mana: {player.mana}")
     action = input("Cast a spell by name, or type 'flee': ").strip()
     if action.lower() == 'flee':
       print(f"{player.name} flees.The path teaches cowardice has a price: no exp gained!")
       break
-    spell_hit = player.cast_manabda(action, enemy)
+    spell_hit = player.cast_mana(action, enemy)
     if not enemy.is_alive():
       break
     if spell_hit:
@@ -265,7 +265,7 @@ if __name__ == "__main__":
   print("A prompt blinks across the top of it in red letters, It wants a name.")
   player_name = input("Enter True Name: ")
   player = Wizard(name=player_name)
-  print(f"\nSpellbook opens: {player.spells} | Manabda: {player.manabda}")
+  print(f"\nSpellbook opens: {player.spells} | mana: {player.mana}")
   print(f"\n{player}")
   print("\nYou are alone. The mountain air bites.")
   print(" more letters appear afterwards : Power has a price. The price has a name.")
@@ -306,12 +306,12 @@ if __name__ == "__main__":
   print("To your right: two dark figures. Above them, a flock of ravens.")
   print("But these are not birds. Too many eyes. Too much hunger. They descend.")
   print("This world is an overlay. Bleak. Hungry.")
-  print("Here, manabda is not given. It is spent.")
+  print("Here, mana is not given. It is spent.")
   print("\nThe mountain slope ahead descends toward a tiny town.")
   print("It bursts with activity. Tiny shadows move to and fro.")
   print("Commerce? Duels? Or just more hungry things? Unknown.")
   print("\nThree paths burn in your mind:")
-  print("1: Help the figures. Manabda may be required. Death may follow.")
+  print("1: Help the figures. mana may be required. Death may follow.")
   print("2: Do not help. Skip the lesson. Skip the risk. Skip the reward.")
   print("3: Ignore both. Descend to the town. Chase answers, not people.")
   choice_2 = input("The Path demands choice. Not comfort. [1/2/3]: ")
@@ -326,7 +326,7 @@ if __name__ == "__main__":
       print("The man does not thank you. He glares. 'You. Pathwalker. Here to rob us?'")
   elif choice_2 == "2":
     print("\nYou do not help. The wail cuts short. Silence returns.")
-    print("A lesson unlearned. Manabda unspent. Is that wise?")
+    print("A lesson unlearned. mana unspent. Is that wise?")
     print("You turn away. The mountain air feels colder.")
   elif choice_2 == "3":
     print("\nYou ignore the screams. The town below calls louder.")

@@ -3,7 +3,9 @@ from Inventory import Inventory
 from systems.status_effects import Burn, Scorched, Combusting
 
 class Wizard:
-  def __init__(self, name: str, level: int = 1, hp: int = 100, school: str = "Undecided", spells: list[str] | None = None, manabda: int = 8, inventory: Inventory | None = None) -> None:
+  def __init__(self, name: str, level: int = 1, hp: int = 100, school: str = "Undecided",
+                spells: list[str] | None = None, manabda: int = 8, max_mana: int = 20,
+               mana: int = 20, inventory: Inventory | None = None) -> None:
     self.name = name
     self.level = level
     self.hp = hp
@@ -16,8 +18,8 @@ class Wizard:
     self.status_effects = []
     self.exp = 0
     self.exp_to_next = self.calc_exp_to_next()
-    self.max_mana = 20
-    self.mana = 20
+    self.max_mana = max_mana
+    self.mana = mana
     self.spell_upgrades = {}
     self.ability_upgrades = {}
     self.abilities = []
@@ -43,11 +45,11 @@ class Wizard:
     self.max_mana += 1
     self.mana = self.max_mana
     if self.level % 3 == 0:
-      self.manabda = min(8, self.manabda + 1)
-      print(f"The well deepens. Manabda: {self.manabda}/8")
+      self.mana = min(8, self.mana + 1)
+      print(f"The well deepens. mana: {self.mana}/8")
     print(f"\n*** {self.name} reached Level {self.level}! ***")
     print(f"Gained +5 Max HP and +1 Max Mana")
-    print(f"Max HP: {self.max_hp} | Max Mana: {self.max_mana} | Manabda: {self.manabda}")
+    print(f"Max HP: {self.max_hp} | Max Mana: {self.max_mana} | mana: {self.mana}")
     print(f"Next level at {self.exp_to_next} EXP\n")
     self.level_up_choice()
 
@@ -141,11 +143,11 @@ class Wizard:
     return self.spell_upgrades.get(spell_name, 0)
 
   def __repr__(self) -> str:
-    return f"Wizard({self.name}) - LVL:{self.level} HP:{self.hp}/{self.max_hp} - School: {self.school} - Spells: {len(self.spells)} - Manabda: {self.manabda} - Mana: {self.mana}/{self.max_mana}"
+    return f"Wizard({self.name}) - LVL:{self.level} HP:{self.hp}/{self.max_hp} - School: {self.school} - Spells: {len(self.spells)} - mana: {self.mana} - Mana: {self.mana}/{self.max_mana}"
 
   def __str__(self) -> str:
     status = "alive" if self.is_alive() else "Fallen"
-    return f"{self.name} the {self.school} Wizard | LVL:{self.level} | {status} | HP: {self.hp}/{self.max_hp} | Mana: {self.mana}/{self.max_mana} | Manabda: {self.manabda}/8 | EXP: {self.exp}/{self.exp_to_next}"
+    return f"{self.name} the {self.school} Wizard | LVL:{self.level} | {status} | HP: {self.hp}/{self.max_hp} | Mana: {self.mana}/{self.max_mana} | mana: {self.mana}/8 | EXP: {self.exp}/{self.exp_to_next}"
 
   def is_alive(self) -> bool:
     return self.hp > 0
@@ -284,32 +286,32 @@ class Wizard:
     print(f"Found: {', '.join(found)}")
     print(self.inventory)
 
-  def check_manabda(self, cost):
-    if self.manabda < cost:
-      raise ValueError(f"The well is dry. Have {self.manabda}, need {cost}.")
+  def check_mana(self, cost):
+    if self.mana < cost:
+      raise ValueError(f"The well is dry. Have {self.mana}, need {cost}.")
 
   def map_fire(self, targets):
     cost = 3
-    self.check_manabda(cost)
-    self.manabda -= cost
+    self.check_mana(cost)
+    self.mana -= cost
     dmg = random.randint(3, 6) + self.ability_upgrades.get("map_fire", 0)
     for t in targets:
       t.take_damage(dmg, "fire")
       if random.random() < 0.4:
         t.add_status(Burn(duration=2, damage_per_turn=2))
-    return f"Fire spreads across {len(targets)} foes for {dmg} each! Manabda: {self.manabda}"
+    return f"Fire spreads across {len(targets)} foes for {dmg} each! mana: {self.mana}"
 
   def reduce_ash(self, target):
     cost = 5
-    self.check_manabda(cost)
-    self.manabda -= cost
+    self.check_mana(cost)
+    self.mana -= cost
     threshold = 8 + self.ability_upgrades.get("reduce_ash", 0) * 2
     if target.hp <= threshold:
       target.hp = 0
-      return f"{target.name} turns to ash! Manabda: {self.manabda}"
+      return f"{target.name} turns to ash! mana: {self.mana}"
     dmg = target.hp // 2
     target.take_damage(dmg, "fire")
-    return f"{target.name} loses half its essence! {dmg} dmg! Manabda: {self.manabda}"
+    return f"{target.name} loses half its essence! {dmg} dmg! mana: {self.mana}"
 
   def pyromancy_burn(self, target):
     if self.school != "Pyromancy":
@@ -321,15 +323,15 @@ class Wizard:
       return False
 
     print(f"\nFire answers your call.")
-    print(f"Your Manabda: {self.manabda}/8")
+    print(f"Your mana: {self.mana}/8")
     print(f"\nHow much heat do you pour into {target.name}?")
     print(f"Their resistance: {target.flame_resistance}")
-    print("1. Kindle     (heat 10)  - costs 2 Manabda")
-    print("2. Sear       (heat 20)  - costs 4 Manabda")
-    print("3. Incinerate (heat 35)  - costs 6 Manabda")
+    print("1. Kindle     (heat 10)  - costs 2 mana")
+    print("2. Sear       (heat 20)  - costs 4 mana")
+    print("3. Incinerate (heat 35)  - costs 6 mana")
 
     if self.ability_upgrades.get("pyromancy_burn", 0) >= 1:
-      print("4. Inferno    (heat 60)  - costs ALL Manabda")
+      print("4. Inferno    (heat 60)  - costs ALL mana")
 
     choice = input("Choose [1-4]: ").strip()
 
@@ -340,7 +342,7 @@ class Wizard:
     }
 
     if self.ability_upgrades.get("pyromancy_burn", 0) >= 1:
-      options["4"] = (60, self.manabda)
+      options["4"] = (60, self.mana)
 
     if choice not in options:
       print("The flame sputters out.")
@@ -348,11 +350,11 @@ class Wizard:
 
     heat, cost = options[choice]
 
-    if self.manabda < cost:
-      print(f"The well runs dry. Need {cost} Manabda, have {self.manabda}.")
+    if self.mana < cost:
+      print(f"The well runs dry. Need {cost} mana, have {self.mana}.")
       return False
 
-    self.manabda -= cost
+    self.mana -= cost
 
     if heat >= target.flame_resistance * 2:
       target.add_status(Combusting(duration=4, damage_per_turn=10))
@@ -360,7 +362,7 @@ class Wizard:
       target.take_damage(dmg, "fire")
       return (f"{target.name} ignites completely!\n"
               f"{dmg} fire damage and fully Combusting!\n"
-              f"Manabda: {self.manabda}")
+              f"mana: {self.mana}")
 
     elif heat >= target.flame_resistance:
       target.add_status(Scorched(duration=2, damage_per_turn=3))
@@ -368,7 +370,7 @@ class Wizard:
       target.take_damage(dmg, "fire")
       return (f"{target.name} is Scorched!\n"
               f"{dmg} fire damage. The heat is building.\n"
-              f"Manabda: {self.manabda}")
+              f"mana: {self.mana}")
 
     else:
       target.add_status(Burn(duration=3, damage_per_turn=5))
@@ -376,7 +378,7 @@ class Wizard:
       target.take_damage(dmg, "fire")
       return (f"Flames lick at {target.name}.\n"
               f"{dmg} fire damage. Burning but not breaking.\n"
-              f"Manabda: {self.manabda}")
+              f"mana: {self.mana}")
 
   def fast_forward_time(self, target, years=None):
     if self.school != "Chronomancy":
@@ -384,14 +386,14 @@ class Wizard:
       return False
 
     print(f"\nThe flow of time bends to your will.")
-    print(f"Your Manabda: {self.manabda}/8")
+    print(f"Your mana: {self.mana}/8")
     print(f"\nHow far do you push {target.name} through time?")
-    print("1. A Score of Years  (20 years)  - costs 3 Manabda")
-    print("2. Two Generations   (40 years)  - costs 5 Manabda")
-    print("3. A Century         (100 years) - costs 8 Manabda")
+    print("1. A Score of Years  (20 years)  - costs 3 mana")
+    print("2. Two Generations   (40 years)  - costs 5 mana")
+    print("3. A Century         (100 years) - costs 8 mana")
 
     if self.ability_upgrades.get("fast_forward_time", 0) >= 1:
-      print("4. Molecular Dissolution       - costs ALL Manabda")
+      print("4. Molecular Dissolution       - costs ALL mana")
 
     choice = input("Choose [1-4]: ").strip()
 
@@ -402,7 +404,7 @@ class Wizard:
     }
 
     if self.ability_upgrades.get("fast_forward_time", 0) >= 1:
-      options["4"] = (999, self.manabda)
+      options["4"] = (999, self.mana)
 
     if choice not in options:
       print("The moment passes. Time snaps back.")
@@ -410,17 +412,17 @@ class Wizard:
 
     years, cost = options[choice]
 
-    if self.manabda < cost:
-      print(f"The well runs dry. Need {cost} Manabda, have {self.manabda}.")
+    if self.mana < cost:
+      print(f"The well runs dry. Need {cost} mana, have {self.mana}.")
       return False
 
-    self.manabda -= cost
+    self.mana -= cost
 
     if years == 999:
       target.hp = 0
       target.is_dust = True
       return (f"{target.name} comes apart at the molecular level.\n"
-              f"They simply... cease. Manabda: {self.manabda}")
+              f"They simply... cease. mana: {self.mana}")
 
     if hasattr(target, 'age') and target.age is not None:
       target.age += years
@@ -430,28 +432,28 @@ class Wizard:
         target.hp = max(1, target.hp // 2)
         return (f"{target.name} withers {years} years!\n"
                 f"Ancient now. Frail. Half the threat.\n"
-                f"Manabda: {self.manabda}")
+                f"mana: {self.mana}")
 
       elif target.age >= 40:
         target.atk = max(1, target.atk - 5)
         return (f"{target.name} ages {years} years!\n"
                 f"Slower. Weaker. Still dangerous.\n"
-                f"Manabda: {self.manabda}")
+                f"mana: {self.mana}")
 
       else:
         return (f"Time moves over {target.name}.\n"
                 f"They seem... unchanged. Was it enough?\n"
-                f"Manabda: {self.manabda}")
+                f"mana: {self.mana}")
 
     elif hasattr(target, 'durability'):
       target.durability -= years * 5
       if target.durability <= 0:
         target.broken = True
         target.is_dust = True
-        return f"The {target.name} crumbles to dust. Manabda: {self.manabda}"
-      return f"The {target.name} ages and weakens. Manabda: {self.manabda}"
+        return f"The {target.name} crumbles to dust. mana: {self.mana}"
+      return f"The {target.name} ages and weakens. mana: {self.mana}"
 
-    return f"Time washes over {target.name}. Nothing changes. Manabda: {self.manabda}"
+    return f"Time washes over {target.name}. Nothing changes. mana: {self.mana}"
 
   def rewind_time(self, target, years=None):
     if self.school != "Chronomancy":
@@ -463,14 +465,14 @@ class Wizard:
       return False
 
     print(f"\nTime coils backward at your command.")
-    print(f"Your Manabda: {self.manabda}/8")
+    print(f"Your manabda: {self.manabda}/8")
     print(f"\nHow far do you pull {target.name} back through time?")
-    print("1. A Score of Years  (20 years)  - costs 3 Manabda")
-    print("2. Two Generations   (40 years)  - costs 5 Manabda")
-    print("3. A Century         (100 years) - costs 8 Manabda")
+    print("1. A Score of Years  (20 years)  - costs 3 mana")
+    print("2. Two Generations   (40 years)  - costs 5 mana")
+    print("3. A Century         (100 years) - costs 8 mana")
 
     if self.ability_upgrades.get("rewind_time", 0) >= 1:
-      print("4. Infant State                - costs ALL Manabda")
+      print("4. Infant State                - costs ALL mana")
 
     choice = input("Choose [1-4]: ").strip()
 
@@ -489,18 +491,18 @@ class Wizard:
 
     years, cost = options[choice]
 
-    if self.manabda < cost:
-      print(f"The well runs dry. Need {cost} Manabda, have {self.manabda}.")
+    if self.mana < cost:
+      print(f"The well runs dry. Need {cost} mana, have {self.manabda}.")
       return False
 
-    self.manabda -= cost
+    self.mana -= cost
 
     if years == 999:
       target.age = 0
       target.atk = max(1, target.atk // 4)
       target.hp = max(1, target.hp // 4)
       return (f"{target.name} shrinks. Regresses. Becomes something small and helpless.\n"
-              f"Barely a threat. Manabda: {self.manabda}")
+              f"Barely a threat. mana: {self.manabda}")
 
     if hasattr(target, 'age') and target.age is not None:
       target.age = max(0, target.age - years)
@@ -510,71 +512,101 @@ class Wizard:
         target.hp = max(1, target.hp // 4)
         return (f"{target.name} regresses to infancy!\n"
                 f"Pathetic now. Almost harmless.\n"
-                f"Manabda: {self.manabda}")
+                f"mana: {self.mana}")
 
       elif target.age <= 10:
         target.atk = max(1, target.atk // 2)
         return (f"{target.name} becomes a youth!\n"
                 f"Weaker. Confused. Still has teeth though.\n"
-                f"Manabda: {self.manabda}")
+                f"mana: {self.mana}")
 
       else:
         target.atk += 2
         return (f"{target.name} grows younger by {years} years!\n"
                 f"Faster. Angrier. More dangerous.\n"
-                f"Manabda: {self.manabda}")
+                f"mana: {self.mana}")
 
     elif hasattr(target, 'broken') and target.broken:
       target.broken = False
       target.durability = getattr(target, 'max_durability', 100)
-      return f"The {target.name} un-breaks. Restored. Manabda: {self.manabda}"
+      return f"The {target.name} un-breaks. Restored. mana: {self.mana}"
 
-    return f"Time reverses around {target.name}. Nothing meaningful changes. Manabda: {self.manabda}"
+    return f"Time reverses around {target.name}. Nothing meaningful changes. mana: {self.mana}"
+
+  def freeze(self, target):
+    if self.school != "Cryomancy":
+      print("Only a Cryomancer can freeze time.")
+      return False
+    cost = 4
+    self.check_manabda(cost)
+    self.mana -= cost
+    duration = 2 + self.ability_upgrades.get("freeze", 0)
+    from systems.status_effects import Frozen
+    target.add_status(Frozen(duration=duration))
+    return (
+      f"Ice closes around {target.name}. It stops mid-motion.\n"
+      f"Frozen for {duration} turns. mana: {self.mana}"
+    )
+
+  def cryo_preserve(self, target):
+    if self.school != "Cryomancy":
+      print("Only a Cryomancer can cryo preserve.")
+      return False
+    cost = 6
+    self.check_manabda(cost)
+    self.mana -= cost
+    from systems.status_effects import Preserved
+    target.add_status(Preserved(duration=2))
+    target.preserved = True
+    return (
+      f"{target.name} is sealed in cryo-stasis. Its state is locked.\n"
+      f"Healing and buffs suspended for 2 turns. mana: {self.mana}"
+    )
 
   def enumerate_fates(self, targets):
     cost = 3
-    self.check_manabda(cost)
-    self.manabda -= cost
+    self.check_mana(cost)
+    self.mana -= cost
     info = [f"{i}: {t.name} | HP:{t.hp} | ATK:{t.atk}" for i, t in enumerate(targets)]
-    return "Fates revealed:\n" + "\n".join(info) + f"\nManabda: {self.manabda}"
+    return "Fates revealed:\n" + "\n".join(info) + f"\nmana: {self.mana}"
 
   def transmute(self, target, new_material="gold"):
     cost = 5
-    self.check_manabda(cost)
-    self.manabda -= cost
+    self.check_mana(cost)
+    self.mana -= cost
     if getattr(target, 'is_animate', False):
       raise ValueError("Can't transmute living things! Use polymorph.")
     target.material = new_material
-    return f"{target.name} becomes {new_material}! Manabda: {self.manabda}"
+    return f"{target.name} becomes {new_material}! mana: {self.mana}"
 
   def polymorph(self, target):
     cost = 7
-    self.check_manabda(cost)
-    self.manabda -= cost
+    self.check_mana(cost)
+    self.mana -= cost
     forms = [("Rabbit", 70), ("Bear", 20), ("Statue", 10)]
     new_form = random.choices([f[0] for f in forms], weights=[f[1] for f in forms])[0]
     target.polymorphed_form = new_form
-    return f"{target.name} becomes a {new_form}! Manabda: {self.manabda}"
+    return f"{target.name} becomes a {new_form}! mana: {self.mana}"
 
   def enhance_item(self, item_name):
     cost = 4
-    self.check_manabda(cost)
-    self.manabda -= cost
+    self.check_mana(cost)
+    self.mana -= cost
     result = self.inventory.upgrade(item_name)
-    return f"{result} Manabda: {self.manabda}"
+    return f"{result} mana: {self.mana}"
 
 
 
 
-  def cast_manabda(self, spell_name, target=None):
+  def cast_mana(self, spell_name, target=None):
     if spell_name not in self.spells:
       print("The spell fizzles. You don't know it.")
       return False
-    if self.manabda == 0:
+    if self.mana == 0:
       print("Nothing happens. The well, from which you draw your power is dry.")
       return False
-    self.manabda -= 1
-    print(f"*Manabda burns. One less in the well.* Manabda left: {self.manabda}")
+    self.mana -= 1
+    print(f"*mana burns. One less in the well.* mana left: {self.mana}")
     min_dmg, max_dmg, dmg_type, desc = self.spell_data.get(spell_name, (1, 3, "arcane", "power lashes {target}."))
     power = self.get_spell_power(spell_name)
     min_dmg += power
@@ -614,17 +646,21 @@ def simple_combat(player, enemy):
       break
     print(f"\n{player}")
     print(f"{enemy}")
-    print(f"Your spells: {player.spells} | Manabda: {player.manabda}")
+    print(f"Your spells: {player.spells} | mana: {player.mana}")
     action = input("Cast a spell by name, or type 'flee': ").strip()
     if action.lower() == 'flee':
       print(f"{player.name} flees.The path teaches cowardice has a price: no exp gained!")
       break
-    spell_hit = player.cast_manabda(action, enemy)
+    spell_hit = player.cast_mana(action, enemy)
     if not enemy.is_alive():
       break
     if spell_hit:
-      print()
-      enemy.attack(player)
+        print()
+        is_frozen = any(type(e).__name__ == "Frozen" for e in enemy.status_effects)
+        if is_frozen:
+          print(f"{enemy.name} is frozen solid. It cannot act.")
+        else:
+          enemy.attack(player)
     if not player.is_alive():
       break
   print("\n=== COMBAT ENDS ===")

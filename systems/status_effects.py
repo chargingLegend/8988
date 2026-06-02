@@ -42,10 +42,45 @@ class Scorched(StatusEffect):
 
 class Combusting(StatusEffect):
   def __init__(self, duration=4, damage_per_turn=10):
-      super().__init__("Combusting", duration, damage_per_turn)
+    super().__init__("Combusting", duration, damage_per_turn)
 
   def tick(self, target):
     result = super().tick(target)
     if not self.is_expired() and result:
       result += "\nFully ablaze. The screaming is secondary to the crackling."
+    return result
+
+class Frozen(StatusEffect):
+  def __init__(self, duration=2):
+    super().__init__("Frozen", duration, damage_per_turn=0)
+
+  def tick(self, target):
+    result = super().tick(target)
+    if not self.is_expired() and not result:
+      result = f"{target.name} is encased in ice. It cannot move."
+    if not self.is_expired() and result:
+      result += "\nThe ice holds. Not a twitch. Not a breath."
+    return result
+
+
+class Preserved(StatusEffect):
+  def __init__(self, duration=2):
+    super().__init__("Preserved", duration, damage_per_turn=0)
+
+  def tick(self, target):
+    result = super().tick(target)
+    if not self.is_expired():
+      result = f"{target.name} is locked in cryo-stasis. Its state cannot change."
+      result += "\nThe ice remembers exactly what it caught."
+    return result
+
+
+class Frostbitten(StatusEffect):
+  def __init__(self, duration=3, damage_per_turn=3):
+    super().__init__("Frostbitten", duration, damage_per_turn)
+
+  def tick(self, target):
+    result = super().tick(target)
+    if not self.is_expired() and result:
+      result += "\nThe cold eats deeper. Flesh forgets warmth."
     return result

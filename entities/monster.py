@@ -2,7 +2,8 @@ import random
 
 class Monster:
   def __init__(self, name="Unknown", hp=10, desc="A creature.", exp_value=0,
-               atk=1, defense=0, level=1, gold_reward=0, loot_table=None, abilities=None, age=None, flame_resistance=None):
+               atk=1, defense=0, level=1, gold_reward=0, loot_table=None,
+               abilities=None, age=None, flame_resistance=None):
     self.name = name
     self.hp = hp
     self.max_hp = hp
@@ -228,7 +229,7 @@ class TrollKing(Monster):
     target.take_damage(dmg, "bludgeoning")
     return dmg
 
-  MONSTER_DB = {
+MONSTER_DB = {
     "Rat": Rat,
     "Bat": Bat,
     "Goblin": Goblin,
