@@ -1419,6 +1419,59 @@ class Wizard:
       print(f"{target.name} catches fire!")
     return True
 
+  def cast_manabda(self, ability_name, target=None):
+    if ability_name not in self.abilities:
+      print("You reach for it. Nothing answers.")
+      return False
+    if self.manabda == 0:
+      print("The manabda is spent. That well does not refill easily.")
+      return False
+
+    ability = self.ability_data.get(ability_name)
+    if not ability:
+      print(f"No data found for {ability_name}.")
+      return False
+
+    tiers = ability["tiers"]
+
+    print(f"\n--- {ability_name} ---")
+    for key, tier in tiers.items():
+      if tier.get("requires_upgrade"):
+        if self.ability_upgrades.get(ability_name, 0) >= 1:
+          print(f"{key}. {tier['label']} - costs ALL manabda")
+      else:
+        print(f"{key}. {tier['label']} - costs {tier['cost']} manabda")
+
+    choice = input("Choose: ").strip()
+    selected = tiers.get(choice)
+
+    if not selected:
+      print("The moment passes. Manabda holds.")
+      return False
+
+    cost = self.manabda if selected["cost"] == "all" else selected["cost"]
+
+    if self.manabda < cost:
+      print(f"Not enough manabda. Need {cost}, have {self.manabda}.")
+      return False
+
+    self.manabda -= cost
+    print(f"*manabda spent. {self.manabda}/{self.max_manabda} remains.*")
+
+    # route to ability effect
+    if ability_name == "fast_forward_time":
+      result = self.fast_forward_time(target, years=selected["years"])
+    elif ability_name == "rewind_time":
+      result = self.rewind_time(target, years=selected["years"])
+    else:
+      print(f"No effect logic found for {ability_name}.")
+      return False
+
+    if result:
+      print(result)
+    return True
+
+
 def simple_combat(player, enemy):
   print(f"\n=== COMBAT: {player.name} vs {enemy.name} ===")
   while player.is_alive() and enemy.is_alive():
