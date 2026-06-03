@@ -123,7 +123,7 @@ if __name__ == "__main__":
         print("He drops a small stone rune into your hand. It hums. 'Sort.'")
         print("'Found it on a corpse last month. Couldn't make it work. Maybe you can.'")
         print("Item acquired: Sort Rune")
-        player.inventory.add_item("Sort Rune")
+        print(player.inventory.add("Sort Rune"))
         player.flags['traveler_friend'] = True
       elif choice_3 == "4":
         print("\nSilence. The man shifts, uncomfortable with your stare.")
@@ -179,7 +179,7 @@ if __name__ == "__main__":
           print("He reaches into his coat. 'Here. You saved us. Even if you're a fool for it.'")
           print("He drops a small stone rune into your hand. It hums. 'Sort.'")
           print("Item acquired: Sort Rune")
-          player.inventory.add_item("Sort Rune")
+          print(player.inventory.add("Sort Rune"))
         elif choice_5 == "2":
           print("\nYou descend toward the town. The bell grows louder.")
           print("The man calls after you: 'You'll die! They're not alone!'")
@@ -300,7 +300,7 @@ if __name__ == "__main__":
     print("Try: sort('mountain') or sort('town') to reveal items/enemies")
     if "sort" not in player.abilities:
       player.abilities.append("sort")
-    player.inventory.remove_item("Sort Rune")
+    player.inventory.removematt("Sort Rune")
 
   print(f"\n=== CHAPTER 1 COMPLETE ===")
   print(f"{player}")

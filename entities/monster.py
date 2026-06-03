@@ -135,7 +135,7 @@ class RavenSwarm(Monster):
                      exp_value=50, level=2, atk=4, defense=0, gold_reward=5,
                      loot_table=[("Black Feather", 60), ("Crow's Eye", 10)],
                      abilities=["Swarm", "Peck Barrage"])
-    self.attack_dmg = (1, 4)
+    self.attack_dmg = (3, 10)
     self.dmg_type = "piercing"
     self.hits = 3
 
