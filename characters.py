@@ -14,6 +14,7 @@ class Wizard:
     self.manabda = manabda
     self.spells = spells if spells is not None else []
     self.spell_data = {}
+    self.ability_data = {}
     self.inventory = inventory if inventory is not None else Inventory()
     self.status_effects = []
     self.exp = 0
@@ -300,28 +301,241 @@ class Wizard:
     if self.mana < cost:
       raise ValueError(f"The well is dry. Have {self.mana}, need {cost}.")
 
+  def check_manabda(self, cost):
+    if self.manabda < cost:
+      raise ValueError(f"The manabda is spent. Have {self.manabda}, need {cost}.")
+
+  def unlock_abilities(self):
+    if self.school == "Pyromancy":
+      self.ability_data.update({
+        "pyromancy_burn": {
+          "tiers": {
+            "1": {"label": "Kindle (heat 10)", "cost": 2},
+            "2": {"label": "Sear (heat 20)", "cost": 4},
+            "3": {"label": "Incinerate (heat 35)", "cost": 6},
+            "4": {"label": "Inferno (heat 60)", "cost": "all", "requires_upgrade": True}
+          }
+        },
+        "map_fire": {
+          "tiers": {
+            "1": {"label": "Spread flame across targets", "cost": 3}
+          }
+        },
+        "reduce_ash": {
+          "tiers": {
+            "1": {"label": "Collapse enemy to ash", "cost": 5}
+          }
+        }
+      })
+      self.abilities = ["pyromancy_burn", "map_fire", "reduce_ash"]
+      self.learn_spell_sort()
+
+    elif self.school == "Chronomancy":
+      self.ability_data.update({
+        "fast_forward_time": {
+          "tiers": {
+            "1": {"label": "A Score of Years (20)", "cost": 3, "years": 20},
+            "2": {"label": "Two Generations (40)", "cost": 5, "years": 40},
+            "3": {"label": "A Century (100)", "cost": 8, "years": 100},
+            "4": {"label": "Molecular Dissolution", "cost": "all", "years": 999, "requires_upgrade": True}
+          }
+        },
+        "rewind_time": {
+          "tiers": {
+            "1": {"label": "A Score of Years (20)", "cost": 3, "years": 20},
+            "2": {"label": "Two Generations (40)", "cost": 5, "years": 40},
+            "3": {"label": "A Century (100)", "cost": 8, "years": 100},
+            "4": {"label": "Infant State", "cost": "all", "years": 999, "requires_upgrade": True}
+          }
+        }
+      })
+      self.abilities = ["fast_forward_time", "rewind_time"]
+      self.learn_spell_sort()
+
+    elif self.school == "Cryomancy":
+      self.ability_data.update({
+        "freeze": {
+          "tiers": {
+            "1": {"label": "Freeze target", "cost": 4}
+          }
+        },
+        "cryo_preserve": {
+          "tiers": {
+            "1": {"label": "Seal in cryo-stasis", "cost": 6}
+          }
+        }
+      })
+      self.abilities = ["freeze", "cryo_preserve"]
+      self.learn_spell_sort()
+
+    elif self.school == "Necromancy":
+      self.ability_data.update({
+        "raise_dead": {
+          "tiers": {
+            "1": {"label": "Raise fallen enemy as ally", "cost": 3}
+          }
+        },
+        "decay": {
+          "tiers": {
+            "1": {"label": "Strip defense (costs 2)", "cost": 2},
+            "2": {"label": "Strip attack (costs 3)", "cost": 3}
+          }
+        },
+        "animate": {
+          "tiers": {
+            "1": {"label": "Animate corpse (cost scales with level)", "cost": 2}
+          }
+        }
+      })
+      self.abilities = ["raise_dead", "decay", "animate"]
+      self.learn_spell_sort()
+
+    elif self.school == "Enhancement":
+      self.ability_data.update({
+        "amplify": {
+          "tiers": {
+            "1": {"label": "Pour manabda into next strike", "cost": 1}
+          }
+        },
+        "temper": {
+          "tiers": {
+            "1": {"label": "Round a target attribute", "cost": 1}
+          }
+        },
+        "surge": {
+          "tiers": {
+            "1": {"label": "Buff all allies", "cost": 2}
+          }
+        }
+      })
+      self.abilities = ["amplify", "temper", "surge"]
+      self.learn_spell_sort()
+
+    elif self.school == "Illusion":
+      self.ability_data.update({
+        "veil": {
+          "tiers": {
+            "1": {"label": "A breath (2 turns)", "cost": 2},
+            "2": {"label": "A heartbeat (4 turns)", "cost": 4},
+            "3": {"label": "A long shadow (6 turns)", "cost": 6}
+          }
+        },
+        "mimic": {
+          "tiers": {
+            "1": {"label": "Surface copy (name only)", "cost": 1},
+            "2": {"label": "Shallow copy (name, hp, atk)", "cost": 3},
+            "3": {"label": "Deep copy (all attributes)", "cost": 5}
+          }
+        },
+        "shatter": {
+          "tiers": {
+            "1": {"label": "A whisper (skip action)", "cost": 2},
+            "2": {"label": "A scream (damage + skip)", "cost": 4},
+            "3": {"label": "Collapse (heavy damage + debuff)", "cost": 6}
+          }
+        }
+      })
+      self.abilities = ["veil", "mimic", "shatter"]
+      self.learn_spell_sort()
+
+    elif self.school == "Conjuration":
+      self.ability_data.update({
+        "summon_elemental": {
+          "tiers": {
+            "1": {"label": "Tier 1 elemental", "cost": 2},
+            "2": {"label": "Tier 2 elemental", "cost": 4},
+            "3": {"label": "Tier 3 elemental", "cost": 7}
+          }
+        },
+        "conjure_supply": {
+          "tiers": {
+            "1": {"label": "Vial", "cost": 1},
+            "2": {"label": "Flask", "cost": 3},
+            "3": {"label": "Draught", "cost": 5}
+          }
+        },
+        "wild_conjure": {
+          "tiers": {
+            "1": {"label": "A crack (40% ally)", "cost": 1},
+            "2": {"label": "A tear (55% ally)", "cost": 2},
+            "3": {"label": "A rip (70% ally)", "cost": 3}
+          }
+        }
+      })
+      self.abilities = ["summon_elemental", "conjure_supply", "wild_conjure"]
+      self.learn_spell_sort()
+
+    elif self.school == "Shadow":
+      self.ability_data.update({
+        "shroud": {
+          "tiers": {
+            "1": {"label": "Surface scan", "cost": 2},
+            "2": {"label": "Deep scan", "cost": 4},
+            "3": {"label": "Total eclipse", "cost": 6}
+          }
+        },
+        "siphon": {
+          "tiers": {
+            "1": {"label": "Drain defense", "cost": 2},
+            "2": {"label": "Drain attack", "cost": 3},
+            "3": {"label": "Drain both", "cost": 5}
+          }
+        },
+        "eclipse": {
+          "tiers": {
+            "1": {"label": "Dim (hit weakest)", "cost": 2},
+            "2": {"label": "Darken (hit 2 weakest)", "cost": 4},
+            "3": {"label": "Total Eclipse (hit all)", "cost": 6}
+          }
+        }
+      })
+      self.abilities = ["shroud", "siphon", "eclipse"]
+      self.learn_spell_sort()
+
+    elif self.school == "Transmutation":
+      self.ability_data.update({
+        "transmute_vitae": {
+          "tiers": {
+            "1": {"label": "HP Potion → II", "cost": 2},
+            "2": {"label": "HP Potion II → III", "cost": 4},
+            "3": {"label": "HP Potion III → IV", "cost": 6}
+          }
+        },
+        "transmute_arcana": {
+          "tiers": {
+            "1": {"label": "Mana Potion → II", "cost": 2},
+            "2": {"label": "Mana Potion II → III", "cost": 4},
+            "3": {"label": "Mana Potion III → IV", "cost": 6}
+          }
+        }
+      })
+      self.abilities = ["transmute_vitae", "transmute_arcana"]
+      self.learn_spell_sort()
+
+
+
   def map_fire(self, targets):
     cost = 3
-    self.check_mana(cost)
-    self.mana -= cost
+    self.check_manabda(cost)
+    self.manabda -= cost
     dmg = random.randint(3, 6) + self.ability_upgrades.get("map_fire", 0)
     for t in targets:
       t.take_damage(dmg, "fire")
       if random.random() < 0.4:
         t.add_status(Burn(duration=2, damage_per_turn=2))
-    return f"Fire spreads across {len(targets)} foes for {dmg} each! mana: {self.mana}"
+    return f"Fire spreads across {len(targets)} foes for {dmg} each! mana: {self.manabda}"
 
   def reduce_ash(self, target):
     cost = 5
-    self.check_mana(cost)
-    self.mana -= cost
+    self.check_manabda(cost)
+    self.manabda -= cost
     threshold = 8 + self.ability_upgrades.get("reduce_ash", 0) * 2
     if target.hp <= threshold:
       target.hp = 0
-      return f"{target.name} turns to ash! mana: {self.mana}"
+      return f"{target.name} turns to ash! mana: {self.manabda}"
     dmg = target.hp // 2
     target.take_damage(dmg, "fire")
-    return f"{target.name} loses half its essence! {dmg} dmg! mana: {self.mana}"
+    return f"{target.name} loses half its essence! {dmg} dmg! mana: {self.manabda}"
 
   def pyromancy_burn(self, target):
     if self.school != "Pyromancy":
@@ -333,15 +547,15 @@ class Wizard:
       return False
 
     print(f"\nFire answers your call.")
-    print(f"Your mana: {self.mana}/8")
+    print(f"Your mana: {self.manabda}/8")
     print(f"\nHow much heat do you pour into {target.name}?")
     print(f"Their resistance: {target.flame_resistance}")
-    print("1. Kindle     (heat 10)  - costs 2 mana")
-    print("2. Sear       (heat 20)  - costs 4 mana")
-    print("3. Incinerate (heat 35)  - costs 6 mana")
+    print("1. Kindle     (heat 10)  - costs 2 manabda")
+    print("2. Sear       (heat 20)  - costs 4 manabda")
+    print("3. Incinerate (heat 35)  - costs 6 manabda")
 
     if self.ability_upgrades.get("pyromancy_burn", 0) >= 1:
-      print("4. Inferno    (heat 60)  - costs ALL mana")
+      print("4. Inferno    (heat 60)  - costs ALL manabda")
 
     choice = input("Choose [1-4]: ").strip()
 
@@ -352,7 +566,7 @@ class Wizard:
     }
 
     if self.ability_upgrades.get("pyromancy_burn", 0) >= 1:
-      options["4"] = (60, self.mana)
+      options["4"] = (60, self.manabda)
 
     if choice not in options:
       print("The flame sputters out.")
@@ -360,8 +574,8 @@ class Wizard:
 
     heat, cost = options[choice]
 
-    if self.mana < cost:
-      print(f"The well runs dry. Need {cost} mana, have {self.mana}.")
+    if self.manabda < cost:
+      print(f"The well runs dry. Need {cost} manabda, have {self.manabda}.")
       return False
 
     self.mana -= cost
@@ -372,7 +586,7 @@ class Wizard:
       target.take_damage(dmg, "fire")
       return (f"{target.name} ignites completely!\n"
               f"{dmg} fire damage and fully Combusting!\n"
-              f"mana: {self.mana}")
+              f"mana: {self.manabda}")
 
     elif heat >= target.flame_resistance:
       target.add_status(Scorched(duration=2, damage_per_turn=3))
@@ -380,7 +594,7 @@ class Wizard:
       target.take_damage(dmg, "fire")
       return (f"{target.name} is Scorched!\n"
               f"{dmg} fire damage. The heat is building.\n"
-              f"mana: {self.mana}")
+              f"mana: {self.manabda}")
 
     else:
       target.add_status(Burn(duration=3, damage_per_turn=5))
@@ -388,7 +602,7 @@ class Wizard:
       target.take_damage(dmg, "fire")
       return (f"Flames lick at {target.name}.\n"
               f"{dmg} fire damage. Burning but not breaking.\n"
-              f"mana: {self.mana}")
+              f"mana: {self.manabda}")
 
   def fast_forward_time(self, target, years=None):
     if self.school != "Chronomancy":
@@ -1382,7 +1596,79 @@ class Wizard:
     print(f"  plain:  like lining people up shortest to tallest. original list unchanged.")
     return results
 
+  def transmute_vitae(self, target_item: str):
+    if self.school != "Transmutation":
+      print("Only a Transmutator can rewrite matter.")
+      return False
 
+    upgrade_map = {
+      "hp_potion": ("hp_potion_ii", 15, 2),
+      "hp_potion_ii": ("hp_potion_iii", 30, 4),
+      "hp_potion_iii": ("hp_potion_iv", 50, 6),
+    }
+
+    if target_item not in upgrade_map:
+      print(f"{target_item} resists the change. Matter holds its shape.")
+      return False
+
+    if target_item not in self.inventory.items:
+      print(f"You reach for it. Your satchel is empty of {target_item}.")
+      return False
+
+    result, heal_value, cost = upgrade_map[target_item]
+
+    if self.manabda < cost:
+      print(f"The well runs dry. Need {cost} manabda, have {self.manabda}.")
+      return False
+
+    self.manabda -= cost
+    self.inventory.remove(target_item)
+    self.inventory.add(result)
+
+    print(f"\nThe {target_item} shudders. Its shape rewrites itself.")
+    print(f"It becomes something greater. +{heal_value} healing when used.")
+    print(f"manabda: {self.manabda}")
+    print(f"\n[ledger] dict lookup maps one value to another in constant time.")
+    print(f"  jargon: 'upgrade_map[key]' retrieves the paired value directly.")
+    print(f"  plain:  like a translation table. put the old word in, get the new one out.")
+    return result
+
+  def transmute_arcana(self, target_item: str):
+    if self.school != "Transmutation":
+      print("Only a Transmutator can rewrite matter.")
+      return False
+
+    upgrade_map = {
+      "mana_potion": ("mana_potion_ii", 10, 2),
+      "mana_potion_ii": ("mana_potion_iii", 25, 4),
+      "mana_potion_iii": ("mana_potion_iv", 45, 6),
+    }
+
+    if target_item not in upgrade_map:
+      print(f"{target_item} resists the change. Its essence won't bend.")
+      return False
+
+    if target_item not in self.inventory.items:
+      print(f"You reach for it. Your satchel is empty of {target_item}.")
+      return False
+
+    result, mana_value, cost = upgrade_map[target_item]
+
+    if self.manabda < cost:
+      print(f"The well runs dry. Need {cost} manabda, have {self.manabda}.")
+      return False
+
+    self.manabda -= cost
+    self.inventory.remove(target_item)
+    self.inventory.add(result)
+
+    print(f"\nThe {target_item} hums. Something inside it expands.")
+    print(f"It rewrites itself into something deeper. +{mana_value} mana when used.")
+    print(f"manabda: {self.manabda}")
+    print(f"\n[ledger] dict.get() retrieves a value safely without raising a KeyError.")
+    print(f"  jargon: 'upgrade_map.get(key, default)' returns default if key is missing.")
+    print(f"  plain:  like asking 'is this on the menu?' before ordering. no surprises.")
+    return result
   
 
 
@@ -1458,15 +1744,12 @@ class Wizard:
     self.manabda -= cost
     print(f"*manabda spent. {self.manabda}/{self.max_manabda} remains.*")
 
-    # route to ability effect
-    if ability_name == "fast_forward_time":
-      result = self.fast_forward_time(target, years=selected["years"])
-    elif ability_name == "rewind_time":
-      result = self.rewind_time(target, years=selected["years"])
-    else:
+    method = getattr(self, ability_name, None)
+    if method is None:
       print(f"No effect logic found for {ability_name}.")
       return False
 
+    result = method(target)
     if result:
       print(result)
     return True
