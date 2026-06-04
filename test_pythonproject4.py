@@ -2,8 +2,11 @@ import pytest
 
 from characters import Wizard
 from entities.monster import RavenSwarm
-from Inventory import Inventory
+from inventory import Inventory
 from location import Location
+from items import (Item, Consumable, Equipment, HPPotion, ManaPotion,
+                   ManabdaPotion, PassRune, ExceptVial, FinallyFlask,
+                   Cloak, Staff, Rod, Scepter)
 
 def test_Raven_Swarm_inherits_from_monster():
   swarm = RavenSwarm()
@@ -89,3 +92,67 @@ def test_reduce_ash_kills_weak_target():
   target.hp = 5
   wizard.reduce_ash(target)
   assert target.hp == 0
+
+def test_pass_rune_returns_negated():
+  rune = PassRune()
+  player = Wizard("Test")
+  result = rune.use(player)
+  assert result == "negated"
+
+def test_hp_potion_restores_hp():
+  player = Wizard("Test", hp=100)
+  player.hp = 50
+  potion = HPPotion("I")
+  potion.use(player)
+  assert player.hp == 65
+
+def test_hp_potion_does_not_exceed_max():
+  player = Wizard("Test", hp=100)
+  player.hp = 95
+  potion = HPPotion("I")
+  potion.use(player)
+  assert player.hp == 100
+
+def test_mana_potion_restores_mana():
+  player = Wizard("Test")
+  player.mana = 0
+  potion = ManaPotion("I")
+  potion.use(player)
+  assert player.mana == 10
+
+def test_finally_flask_fully_restores():
+  player = Wizard("Test", hp=100)
+  player.hp = 0
+  flask = FinallyFlask()
+  result = flask.use(player)
+  assert player.hp == player.max_hp
+  assert player.mana == player.max_mana
+  assert player.manabda == 8
+  assert result == "resurrected"
+
+def test_except_vial_restores_quarter_hp():
+  player = Wizard("Test", hp=100)
+  player.hp = 10
+  vial = ExceptVial()
+  vial.use(player)
+  assert player.hp == 35
+
+def test_cloak_adds_defense():
+  player = Wizard("Test")
+  cloak = Cloak()
+  cloak.equip(player)
+  assert player.defense == 2
+
+def test_cloak_removes_defense_on_unequip():
+  player = Wizard("Test")
+  cloak = Cloak()
+  cloak.equip(player)
+  cloak.unequip(player)
+  assert player.defense == 0
+
+def test_manabda_potion_does_not_exceed_max():
+  player = Wizard("Test")
+  player.manabda = 7
+  potion = ManabdaPotion("I")
+  potion.use(player)
+  assert player.manabda == 8

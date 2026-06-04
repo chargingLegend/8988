@@ -1,5 +1,8 @@
 from characters import Wizard, simple_combat
 from entities.monster import RavenSwarm
+from items import (Item, Consumable, Equipment, HPPotion, ManaPotion,
+                   ManabdaPotion, PassRune, ExceptVial, FinallyFlask,
+                   Cloak, Staff, Rod, Scepter)
 from entities.humanoid import DesperateTraveler, Enforcer, FrightenedWoman
 import random
 
@@ -300,7 +303,7 @@ if __name__ == "__main__":
     print("Try: sort('mountain') or sort('town') to reveal items/enemies")
     if "sort" not in player.abilities:
       player.abilities.append("sort")
-    player.inventory.removematt("Sort Rune")
+    player.inventory.remove("Sort Rune")
 
   print(f"\n=== CHAPTER 1 COMPLETE ===")
   print(f"{player}")
