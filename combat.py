@@ -4,6 +4,15 @@ from items import PassRune, ExceptVial, FinallyFlask, HPPotion, ManaPotion
 
 def simple_combat(player, enemy):
   print(f"\n=== COMBAT: {player.name} vs {enemy.name} ===")
+
+  mira = None
+  if hasattr(player, 'flags') and player.flags.get('companion_mira'):
+    from entities.humanoid import FrightenedWoman
+    mira = FrightenedWoman()
+    mira.reset_passive()
+    print(f"\nMira stands back. Watching. Ready.")
+    print(f"Mira: {mira.hp}/{mira.max_hp} HP")
+
   while player.is_alive() and enemy.is_alive():
     player_msgs = player.tick_status_effects()
     if player_msgs:
@@ -16,14 +25,28 @@ def simple_combat(player, enemy):
     if not enemy.is_alive():
       break
 
+    if mira and mira.is_alive():
+      mira.passive_check(player)
+
     print(f"\n{player}")
     print(f"{enemy}")
-    print(f"Your spells: {player.spells} | mana: {player.mana}")
+    print(f"Your spells: {player.spells} | Mana: {player.mana}/{player.max_mana}")
+    if mira and mira.is_alive():
+      print(f"Mira: {mira.hp}/{mira.max_hp} HP | Type 'mira' to ask for healing.")
+
     action = input("Cast a spell by name, or type 'flee': ").strip()
 
     if action.lower() == 'flee':
-      print(f"{player.name} flees. The path teaches cowardice has a price: no exp gained!")
+      print(f"{player.name} flees.")
+      print(f"The Path teaches cowardice has a price: no exp gained.")
       break
+
+    if action.lower() == 'mira':
+      if mira and mira.is_alive():
+        mira.heal_choice(player)
+      else:
+        print(f"\nShe isn't here.")
+      continue
 
     spell_hit = player.cast_mana(action, enemy)
 
@@ -91,5 +114,12 @@ def simple_combat(player, enemy):
         flask = player.inventory.get_item("Finally Flask")
         flask.use(player)
         player.inventory.remove("Finally Flask")
+
+  if mira and mira.is_alive():
+    print(f"\nMira: {mira.hp}/{mira.max_hp} HP after combat.")
+    if mira.hp <= 20:
+      print(f"She's pale. Unsteady.")
+      print(f"'I'm alright.' She says it again.")
+      print(f"You're not sure either of you believes it.")
 
   print("\n=== COMBAT ENDS ===")

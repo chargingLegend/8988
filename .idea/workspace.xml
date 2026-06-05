@@ -1,10 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="835b3a01-da1c-4899-ae46-58ecf35d64ec" name="Changes" comment="Add unlock_abilities, ability_data tiers, getattr routing, and pytest coverage">
+    <list default="true" id="835b3a01-da1c-4899-ae46-58ecf35d64ec" name="Changes" comment="added to main">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test_pythonproject4.py" beforeDir="false" afterPath="$PROJECT_DIR$/test_pythonproject4.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/wizard_core.py" beforeDir="false" afterPath="$PROJECT_DIR$/wizard_core.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -112,12 +111,22 @@
       <option name="project" value="LOCAL" />
       <updated>1780573082477</updated>
     </task>
-    <option name="localTasksCounter" value="3" />
+    <task id="LOCAL-00003" summary="refactor: split characters.py into wizard_core, wizard_schools, wizard_abilities, combat, wizard&#10;&#10;- wizard_core.py: Wizard class, init, stats, leveling, status effects, cast methods&#10;- wizard_schools.py: choose_school, unlock_abilities, learn_spell_sort, sort&#10;- wizard_abilities.py: all ability methods, elementals promoted to top-level classes&#10;- combat.py: simple_combat&#10;- wizard.py: assembly point, patches all methods onto Wizard at import&#10;- deleted characters.py&#10;- updated imports in main.py and test_pythonproject4.py&#10;- all 32 tests passing">
+      <option name="closed" value="true" />
+      <created>1780666750333</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1780666750335</updated>
+    </task>
+    <option name="localTasksCounter" value="4" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="added cast_manabda so abilities will be inherited to users character and then can be used in the game." />
     <MESSAGE value="Add unlock_abilities, ability_data tiers, getattr routing, and pytest coverage" />
-    <option name="LAST_COMMIT_MESSAGE" value="Add unlock_abilities, ability_data tiers, getattr routing, and pytest coverage" />
+    <MESSAGE value="refactor: split characters.py into wizard_core, wizard_schools, wizard_abilities, combat, wizard&#10;&#10;- wizard_core.py: Wizard class, init, stats, leveling, status effects, cast methods&#10;- wizard_schools.py: choose_school, unlock_abilities, learn_spell_sort, sort&#10;- wizard_abilities.py: all ability methods, elementals promoted to top-level classes&#10;- combat.py: simple_combat&#10;- wizard.py: assembly point, patches all methods onto Wizard at import&#10;- deleted characters.py&#10;- updated imports in main.py and test_pythonproject4.py&#10;- all 32 tests passing" />
+    <MESSAGE value="added to main" />
+    <option name="LAST_COMMIT_MESSAGE" value="added to main" />
   </component>
 </project>

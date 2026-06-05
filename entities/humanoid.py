@@ -26,71 +26,254 @@ class Humanoid(Monster):
     return None
 
 
+
 class DesperateTraveler(Humanoid):
   def __init__(self):
     super().__init__(
       name="Desperate Traveler",
       hp=45,
-      desc="A wary man with blonde hair hiding his eyes.",
+      desc="A wary man with blonde hair hanging over his eyes. "
+           "Something about him suggests he was more than this once. "
+           "Or wanted to be.",
       exp_value=35,
       atk=4,
       defense=2,
       level=2,
       gold_reward=8,
-      loot_table=["Sort Rune", "Tattered Cloak"],
-      abilities=["Weak Push"]
+      loot_table=[("Tattered Cloak", 60), ("Rusted Dagger", 40)],
+      abilities=["Dim", "Mutter", "Veil"]
     )
     self.true_name = "Caleb"
+    self.school = "Shadow"
     self.mana = 15
     self.max_mana = 15
     self.manabda = 6
     self.faction = "Travelers"
-    self.spells = ["Weak Push"]
+    self.spells = ["Dim", "Mutter", "Veil"]
+    self.spell_data = {
+      "Dim": (0, 0, "shadow", "light flees {target}. It blinks, confused."),
+      "Mutter": (1, 5, "shadow", "dark words find the cracks in {target}'s resolve."),
+      "Veil": (0, 0, "shadow", "he steps sideways out of your sight. For a moment.")
+    }
+    self.fled = False
 
   def attack(self, target):
-    if self.mana >= 3 and random.randint(1, 100) > 40:
-      self.mana -= 3
-      dmg = random.randint(4, 8) + self.atk
-      print(f"{self.name} casts Weak Push! {dmg} damage! Mana: {self.mana}/{self.max_mana}")
+    roll = random.randint(1, 100)
+
+    if self.mana >= 4 and roll > 60:
+      self.mana -= 4
+      dmg = random.randint(3, 7) + self.atk
+      print(f"\nHe steps into shadow mid-stride.")
+      print(f"You lose him for half a second.")
+      print(f"Then he's behind you.")
+      print(f"'Mutter.' He says it flat. Like a word he's said a thousand times.")
+      print(f"Dark words find something soft. {dmg} shadow damage.")
+      print(f"Mana: {self.mana}/{self.max_mana}")
       return dmg
+
+    elif self.mana >= 2 and roll > 40:
+      self.mana -= 2
+      dmg = random.randint(2, 5) + self.atk
+      print(f"\nHe flickers.")
+      print(f"'Dim.' Quiet. Almost bored.")
+      print(f"The light around him bends wrong for a moment.")
+      print(f"Something hits you in the confusion. {dmg} shadow damage.")
+      print(f"Mana: {self.mana}/{self.max_mana}")
+      return dmg
+
     else:
       dmg = random.randint(2, 5) + self.atk
-      print(f"{self.name} slashes with a rusted dagger! {dmg} damage!")
+      print(f"\nThe spell won't come.")
+      print(f"He draws a rusted dagger instead.")
+      print(f"'Fine.' Like he's angry at himself.")
+      print(f"The blade finds you anyway. {dmg} damage.")
       return dmg
+
+  def on_low_hp(self):
+    if self.hp <= 0 and not self.fled:
+      self.fled = True
+      self.hp = 1
+      return True
+    return False
+
+
+class Bloodweaver:
+  """
+  Mira's unique class. Cannot be chosen by the player.
+  Heals by spending her own HP. Everything has a cost here.
+  """
+  SCHOOL = "Bloodweaver"
+
+  SPELLS = {
+    "Mend": {
+      "flavor": "She presses her hand against your wound. Something moves from her into you.",
+      "mechanic": "(Restores 15 player HP. Costs Mira 10 HP. Safe-ish.)",
+      "player_restore": 15,
+      "self_cost": 10,
+    },
+    "Staunch": {
+      "flavor": "Her breath catches. She gives more than she should.",
+      "mechanic": "(Restores 30 player HP. Costs Mira 20 HP. Use carefully.)",
+      "player_restore": 30,
+      "self_cost": 20,
+    },
+    "Lifegift": {
+      "flavor": "She closes her eyes. When she opens them something is gone from her face.",
+      "mechanic": "(Restores 60 player HP. Clears one status effect. Costs Mira 35 HP. Emergency only.)",
+      "player_restore": 60,
+      "self_cost": 35,
+      "clears_status": True,
+    },
+  }
+
+  PASSIVE_THRESHOLD = 0.20
+  PASSIVE_HEAL = "Mend"
 
 
 class FrightenedWoman(Humanoid):
   def __init__(self):
     super().__init__(
-      name="Frightened Woman",
-      hp=20,
-      desc="A homely woman, shaking with fear.",
+      name="Mira",
+      hp=60,
+      desc="A slight woman with careful eyes. "
+           "She doesn't talk much. "
+           "What she does, she means.",
       exp_value=0,
-      atk=1,
+      atk=0,
       defense=0,
       level=1,
-      gold_reward=2,
-      loot_table=["Torn Shawl"],
+      gold_reward=0,
+      loot_table=[],
       abilities=[]
     )
     self.true_name = "Mira"
-    self.mana = 5
-    self.max_mana = 5
-    self.manabda = 2
+    self.school = Bloodweaver.SCHOOL
+    self.spells = list(Bloodweaver.SPELLS.keys())
+    self.spell_data = Bloodweaver.SPELLS
+    self.mana = 0
+    self.max_mana = 0
+    self.manabda = 0
     self.faction = "Travelers"
     self.can_fight = False
-    self.spells = []
-
-  def cower(self):
-    print(f"{self.name} cowers behind cover, shaking.")
+    self.passive_triggered = False
+    self.passive_threshold = Bloodweaver.PASSIVE_THRESHOLD
+    self.passive_heal = Bloodweaver.PASSIVE_HEAL
 
   def attack(self, target):
-    if not self.can_fight:
-      self.cower()
-      return 0
-    dmg = 1
-    print(f"{self.name} throws a rock in desperation! {dmg} damage!")
-    return dmg
+    print(f"\nMira doesn't move toward the fight.")
+    print(f"She looks at you instead.")
+    print(f"'Tell me where it hurts.'")
+    return 0
+
+  def mend(self, player):
+    spell = Bloodweaver.SPELLS["Mend"]
+    cost = spell["self_cost"]
+    if self.hp <= cost:
+      print(f"\nMira looks at her hands.")
+      print(f"'I don't have enough left.'")
+      print(f"She means it literally.")
+      return False
+    self.hp -= cost
+    restore = spell["player_restore"]
+    player.hp = min(player.max_hp, player.hp + restore)
+    print(f"\n{spell['flavor']}")
+    print(f"{spell['mechanic']}")
+    print(f"+{restore} HP restored. [{player.hp}/{player.max_hp}]")
+    print(f"Mira: {self.hp}/{self.max_hp} HP remaining.")
+    return True
+
+  def staunch(self, player):
+    spell = Bloodweaver.SPELLS["Staunch"]
+    cost = spell["self_cost"]
+    if self.hp <= cost:
+      print(f"\nMira shakes her head slowly.")
+      print(f"'Not enough. I'm sorry.'")
+      return False
+    self.hp -= cost
+    restore = spell["player_restore"]
+    player.hp = min(player.max_hp, player.hp + restore)
+    print(f"\n{spell['flavor']}")
+    print(f"{spell['mechanic']}")
+    print(f"+{restore} HP restored. [{player.hp}/{player.max_hp}]")
+    print(f"Mira: {self.hp}/{self.max_hp} HP remaining.")
+    return True
+
+  def lifegift(self, player):
+    spell = Bloodweaver.SPELLS["Lifegift"]
+    cost = spell["self_cost"]
+    if self.hp <= cost:
+      print(f"\nMira looks at you for a long moment.")
+      print(f"'If I had more to give, I would.'")
+      print(f"'I don't.'")
+      return False
+    self.hp -= cost
+    restore = spell["player_restore"]
+    player.hp = min(player.max_hp, player.hp + restore)
+    print(f"\n{spell['flavor']}")
+    print(f"{spell['mechanic']}")
+    print(f"+{restore} HP restored. [{player.hp}/{player.max_hp}]")
+    if spell.get("clears_status") and player.status_effects:
+      cleared = player.status_effects.pop(0)
+      print(f"Status effect '{cleared.name}' cleared.")
+      print(f"She absorbed it. You don't want to know what that costs.")
+    print(f"Mira: {self.hp}/{self.max_hp} HP remaining.")
+    if self.hp <= 10:
+      print(f"\nShe sways slightly.")
+      print(f"Catches herself on the wall.")
+      print(f"'I'm alright.' She says it like she's reminding herself.")
+    return True
+
+  def passive_check(self, player):
+    if self.passive_triggered:
+      return False
+    if not self.is_alive():
+      return False
+    threshold = int(player.max_hp * self.passive_threshold)
+    if player.hp <= threshold:
+      print(f"\nMira moves before you can ask.")
+      print(f"She doesn't say anything.")
+      print(f"She just acts.")
+      result = self.mend(player)
+      if result:
+        self.passive_triggered = True
+      return result
+    return False
+
+  def reset_passive(self):
+    self.passive_triggered = False
+
+  def heal_choice(self, player):
+    if not self.is_alive():
+      print(f"\nMira can't help. She's gone.")
+      return False
+    print(f"\n--- Mira [{self.hp}/{self.max_hp} HP] ---")
+    print(f"'Tell me how bad it is.'")
+    print(f"\n1. Mend")
+    print(f"   {Bloodweaver.SPELLS['Mend']['flavor']}")
+    print(f"   {Bloodweaver.SPELLS['Mend']['mechanic']}")
+    print(f"\n2. Staunch")
+    print(f"   {Bloodweaver.SPELLS['Staunch']['flavor']}")
+    print(f"   {Bloodweaver.SPELLS['Staunch']['mechanic']}")
+    print(f"\n3. Lifegift")
+    print(f"   {Bloodweaver.SPELLS['Lifegift']['flavor']}")
+    print(f"   {Bloodweaver.SPELLS['Lifegift']['mechanic']}")
+    print(f"\n4. 'Save yourself. I'm fine.'")
+    choice = input("Choose: ").strip()
+    if choice == "1":
+      return self.mend(player)
+    elif choice == "2":
+      return self.staunch(player)
+    elif choice == "3":
+      return self.lifegift(player)
+    elif choice == "4":
+      print(f"\nShe looks at you.")
+      print(f"'Alright.' She doesn't argue.")
+      print(f"'But I'm watching.'")
+      return False
+    else:
+      print(f"\nShe waits.")
+      print(f"'Whenever you're ready.'")
+      return False
 
 
 class Enforcer(Humanoid):

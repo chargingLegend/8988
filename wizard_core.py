@@ -23,6 +23,7 @@ class Wizard:
     self.status_effects = []
     self.exp = 0
     self.defense = 0
+    self.gold = 0
     self.exp_to_next = self.calc_exp_to_next()
     self.max_mana = max_mana
     self.mana = mana
