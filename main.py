@@ -1,9 +1,11 @@
-from characters import Wizard, simple_combat
+from wizard import Wizard
+from combat import simple_combat
 from entities.monster import RavenSwarm
 from items import (Item, Consumable, Equipment, HPPotion, ManaPotion,
                    ManabdaPotion, PassRune, ExceptVial, FinallyFlask,
                    Cloak, Staff, Rod, Scepter)
 from entities.humanoid import DesperateTraveler, Enforcer, FrightenedWoman
+from wizard_core import Wizard
 import random
 
 if __name__ == "__main__":

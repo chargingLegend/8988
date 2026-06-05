@@ -1,6 +1,6 @@
 import pytest
 
-from characters import Wizard
+from wizard import Wizard
 from entities.monster import RavenSwarm
 from inventory import Inventory
 from location import Location
@@ -156,3 +156,19 @@ def test_manabda_potion_does_not_exceed_max():
   potion = ManabdaPotion("I")
   potion.use(player)
   assert player.manabda == 8
+
+
+def test_except_vial_restores_quarter_hp():
+  player = Wizard("Test", hp=100)
+  player.hp = 10
+  vial = ExceptVial()
+  vial.use(player)
+  assert player.hp == 35
+
+
+def test_except_vial_doesnt_exceed_max_hp():
+  player = Wizard("Test", hp=100)
+  player.hp = 90
+  vial = ExceptVial()
+  vial.use(player)
+  assert player.hp == 100
