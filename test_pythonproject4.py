@@ -1,14 +1,280 @@
 import pytest
 
 from wizard import Wizard
-from entities.monster import RavenSwarm
+from entities.monster import (RavenSwarm, Rat, Bat, Goblin, Wolf,
+                               Skeleton, Spider, CaveTroll, Wraith, TrollKing)
 from inventory import Inventory
-from location import Location
+from location import (Location, Town, Vardeth, FreeHollow,
+                      Cave, DrevsCave, CrystalGrotta, Shadowhollow,
+                      Forest, SylasForest, MireWood, WhisperGrove,
+                      Mountain, FrostpeakMountain, StormridgeMountain, AshenPeak,
+                      Ruins, OrathsRuins, ForgottenTemple, CollapsingCitadel)
 from items import (Item, Consumable, Equipment, HPPotion, ManaPotion,
                    ManabdaPotion, PassRune, ExceptVial, FinallyFlask,
                    Cloak, Staff, Rod, Scepter)
+from spawn import EnemySpawner
 
-def test_Raven_Swarm_inherits_from_monster():
+
+# ── LOCATION HIERARCHY ───────────────────────────────────────
+
+def test_location_is_grandparent():
+  assert issubclass(Town, Location)
+  assert issubclass(Cave, Location)
+  assert issubclass(Forest, Location)
+  assert issubclass(Mountain, Location)
+  assert issubclass(Ruins, Location)
+
+def test_vardeth_inherits_from_town():
+  assert issubclass(Vardeth, Town)
+  assert issubclass(Vardeth, Location)
+
+def test_drevscave_inherits_from_cave():
+  assert issubclass(DrevsCave, Cave)
+  assert issubclass(DrevsCave, Location)
+
+def test_sylasforest_inherits_from_forest():
+  assert issubclass(SylasForest, Forest)
+  assert issubclass(SylasForest, Location)
+
+def test_frostpeak_inherits_from_mountain():
+  assert issubclass(FrostpeakMountain, Mountain)
+  assert issubclass(FrostpeakMountain, Location)
+
+def test_orathsruins_inherits_from_ruins():
+  assert issubclass(OrathsRuins, Ruins)
+  assert issubclass(OrathsRuins, Location)
+
+
+# ── LOCATION DEFAULTS ────────────────────────────────────────
+
+def test_location_grandparent_defaults():
+  assert Location.level_cap == 0
+  assert Location.boss is None
+  assert Location.enemy_table == []
+  assert Location.common == []
+  assert Location.uncommon == []
+  assert Location.rare == []
+
+def test_town_defaults():
+  assert Town.vendors == []
+  assert Town.requires_tithe == False
+  assert Town.grind_available == False
+
+def test_cave_defaults():
+  assert Cave.grind_available == True
+  assert Cave.boss is None
+  assert Cave.enemy_table == []
+  assert Cave.level_cap == 0
+
+
+# ── VARDETH ──────────────────────────────────────────────────
+
+def test_vardeth_level_cap():
+  assert Vardeth.level_cap == 4
+
+def test_vardeth_requires_tithe():
+  assert Vardeth.requires_tithe == True
+
+def test_vardeth_grind_available():
+  assert Vardeth.grind_available == True
+
+def test_vardeth_has_vendor():
+  assert "Maren" in Vardeth.vendors
+
+def test_vardeth_has_enemy_table():
+  assert len(Vardeth.enemy_table) > 0
+
+def test_vardeth_common_items():
+  assert "broken_pavement" in Vardeth.common
+  assert "paper_scrap" in Vardeth.common
+  assert "empty_bottle" in Vardeth.common
+
+def test_vardeth_uncommon_items():
+  assert "silver_pendant" in Vardeth.uncommon
+  assert "half_filled_ink_bottle" in Vardeth.uncommon
+
+def test_vardeth_rare_items():
+  assert "enforcer_badge" in Vardeth.rare
+  assert "collectors_ledger" in Vardeth.rare
+
+def test_vardeth_enemy_weights_sum_to_100():
+  weights = [w for _, w in Vardeth.enemy_table]
+  assert sum(weights) == 100
+
+
+# ── DREVS CAVE ───────────────────────────────────────────────
+
+def test_drevscave_level_cap():
+  assert DrevsCave.level_cap == 6
+
+def test_drevscave_boss():
+  assert DrevsCave.boss == "Cave Troll"
+
+def test_drevscave_has_vendor():
+  assert "Drev" in DrevsCave.vendors
+
+def test_drevscave_common_items():
+  assert "rock" in DrevsCave.common
+  assert "mushroom" in DrevsCave.common
+  assert "bat_wing" in DrevsCave.common
+  assert "dust" in DrevsCave.common
+
+def test_drevscave_uncommon_items():
+  assert "crystal_shard" in DrevsCave.uncommon
+  assert "glowing_moss" in DrevsCave.uncommon
+
+def test_drevscave_rare_items():
+  assert "troll_blood_vial" in DrevsCave.rare
+  assert "cave_pearl" in DrevsCave.rare
+
+def test_drevscave_enemy_weights_sum_to_100():
+  weights = [w for _, w in DrevsCave.enemy_table]
+  assert sum(weights) == 100
+
+
+# ── SYLAS FOREST ─────────────────────────────────────────────
+
+def test_sylasforest_level_cap():
+  assert SylasForest.level_cap == 10
+
+def test_sylasforest_boss():
+  assert SylasForest.boss == "Troll King"
+
+def test_sylasforest_has_vendor():
+  assert "Syla" in SylasForest.vendors
+
+def test_sylasforest_rare_items():
+  assert "ancient_root" in SylasForest.rare
+  assert "glowspore" in SylasForest.rare
+
+def test_sylasforest_enemy_weights_sum_to_100():
+  weights = [w for _, w in SylasForest.enemy_table]
+  assert sum(weights) == 100
+
+
+# ── FROSTPEAK MOUNTAIN ───────────────────────────────────────
+
+def test_frostpeak_level_cap():
+  assert FrostpeakMountain.level_cap == 8
+
+def test_frostpeak_boss():
+  assert FrostpeakMountain.boss == "Wraith"
+
+def test_frostpeak_common_items():
+  assert "stone" in FrostpeakMountain.common
+  assert "snow" in FrostpeakMountain.common
+  assert "goat_hair" in FrostpeakMountain.common
+
+def test_frostpeak_rare_items():
+  assert "wraith_essence" in FrostpeakMountain.rare
+  assert "ancient_ore" in FrostpeakMountain.rare
+
+def test_frostpeak_enemy_weights_sum_to_100():
+  weights = [w for _, w in FrostpeakMountain.enemy_table]
+  assert sum(weights) == 100
+
+
+# ── ORATHS RUINS ─────────────────────────────────────────────
+
+def test_orathsruins_level_cap():
+  assert OrathsRuins.level_cap == 12
+
+def test_orathsruins_boss():
+  assert OrathsRuins.boss == "Lich"
+
+def test_orathsruins_has_vendor():
+  assert "Orath" in OrathsRuins.vendors
+
+def test_orathsruins_rare_items():
+  assert "lich_fragment" in OrathsRuins.rare
+  assert "forgotten_spellscroll" in OrathsRuins.rare
+
+def test_orathsruins_enemy_weights_sum_to_100():
+  weights = [w for _, w in OrathsRuins.enemy_table]
+  assert sum(weights) == 100
+
+
+# ── ALL LOCATIONS HAVE 3 ITEM TIERS ──────────────────────────
+
+@pytest.mark.parametrize("loc", [
+  DrevsCave, CrystalGrotta, Shadowhollow,
+  SylasForest, MireWood, WhisperGrove,
+  FrostpeakMountain, StormridgeMountain, AshenPeak,
+  OrathsRuins, ForgottenTemple, CollapsingCitadel,
+  Vardeth, FreeHollow
+])
+def test_all_locations_have_three_tiers(loc):
+  assert len(loc.common) > 0
+  assert len(loc.uncommon) > 0
+  assert len(loc.rare) > 0
+
+@pytest.mark.parametrize("loc", [
+  DrevsCave, CrystalGrotta, Shadowhollow,
+  SylasForest, MireWood, WhisperGrove,
+  FrostpeakMountain, StormridgeMountain, AshenPeak,
+  OrathsRuins, ForgottenTemple, CollapsingCitadel,
+  Vardeth, FreeHollow
+])
+def test_all_locations_have_level_cap(loc):
+  assert loc.level_cap > 0
+
+@pytest.mark.parametrize("loc", [
+  DrevsCave, CrystalGrotta, Shadowhollow,
+  SylasForest, MireWood, WhisperGrove,
+  FrostpeakMountain, StormridgeMountain, AshenPeak,
+  OrathsRuins, ForgottenTemple, CollapsingCitadel,
+  Vardeth, FreeHollow
+])
+def test_all_locations_have_boss(loc):
+  assert loc.boss is not None
+
+@pytest.mark.parametrize("loc", [
+  DrevsCave, CrystalGrotta, Shadowhollow,
+  SylasForest, MireWood, WhisperGrove,
+  FrostpeakMountain, StormridgeMountain, AshenPeak,
+  OrathsRuins, ForgottenTemple, CollapsingCitadel,
+  Vardeth, FreeHollow
+])
+def test_all_locations_have_enemy_table(loc):
+  assert len(loc.enemy_table) > 0
+
+
+# ── SPAWN ────────────────────────────────────────────────────
+
+def test_spawner_returns_enemy_below_level_cap():
+  spawner = EnemySpawner(DrevsCave)
+  enemy, is_boss = spawner.spawn(player_level=1)
+  assert enemy is not None
+  assert is_boss == False
+  assert enemy.is_alive()
+
+def test_spawner_returns_boss_at_level_cap():
+  spawner = EnemySpawner(DrevsCave)
+  enemy, is_boss = spawner.spawn(player_level=DrevsCave.level_cap)
+  assert is_boss == True
+  assert enemy.name == "Cave Troll"
+
+def test_spawner_boss_is_alive():
+  spawner = EnemySpawner(DrevsCave)
+  enemy, is_boss = spawner.spawn(player_level=DrevsCave.level_cap)
+  assert enemy.is_alive()
+
+def test_spawner_forest_boss():
+  spawner = EnemySpawner(SylasForest)
+  enemy, is_boss = spawner.spawn(player_level=SylasForest.level_cap)
+  assert is_boss == True
+  assert enemy.name == "Troll King"
+
+def test_spawner_mountain_boss():
+  spawner = EnemySpawner(FrostpeakMountain)
+  enemy, is_boss = spawner.spawn(player_level=FrostpeakMountain.level_cap)
+  assert is_boss == True
+  assert enemy.name == "Wraith"
+
+
+# ── WIZARD EXISTING TESTS (preserved) ───────────────────────
+
+def test_raven_swarm_inherits_from_monster():
   swarm = RavenSwarm()
   assert swarm.hp == 15
   assert swarm.name == "Raven Swarm"
@@ -26,44 +292,19 @@ def test_learn_sort_unlocks_spell():
   assert "sort" in player.spells
   assert "rune" in result.lower()
 
-
-@pytest.mark.parametrize("school", ["Pyromancy", "Cryomancy","Chronomancy", "Necromancy", "Enhancement",
-                                    "Illusion", "Conjuration", "Shadow", "Transmutation"])
+@pytest.mark.parametrize("school", [
+  "Pyromancy", "Cryomancy", "Chronomancy", "Necromancy",
+  "Enhancement", "Illusion", "Conjuration", "Shadow", "Transmutation"
+])
 def test_valid_schools(school):
-    wizard = Wizard("Test", school=school)
-    assert wizard.school == school
-
-
+  wizard = Wizard("Test", school=school)
+  assert wizard.school == school
 
 def test_inventory_add_item():
   inv = Inventory()
   inv.add("Sword")
   assert len(inv.items) == 1
   assert "Sword" in inv.items
-
-def test_location_is_a_location():
-  assert Location.MOUNTAIN in Location.LOCATIONS
-
-@pytest.mark.parametrize("location", [
-    Location.CAVE,
-    Location.MOUNTAIN,
-    Location.FOREST,
-])
-def test_valid_locations(location):
-    assert location in Location.LOCATIONS
-
-
-def test_cave_common_items():
-  common = Location.LOCATIONS[Location.CAVE]["common"]
-  assert "rock" in common
-  assert "mushroom" in common
-  assert "bat_wing" in common
-  assert "dust" in common
-
-
-
-
-
 
 def test_map_fire_costs_manabda():
   wizard = Wizard("Test", school="Pyromancy", manabda=8)
@@ -137,6 +378,13 @@ def test_except_vial_restores_quarter_hp():
   vial.use(player)
   assert player.hp == 35
 
+def test_except_vial_doesnt_exceed_max_hp():
+  player = Wizard("Test", hp=100)
+  player.hp = 90
+  vial = ExceptVial()
+  vial.use(player)
+  assert player.hp == 100
+
 def test_cloak_adds_defense():
   player = Wizard("Test")
   cloak = Cloak()
@@ -156,19 +404,3 @@ def test_manabda_potion_does_not_exceed_max():
   potion = ManabdaPotion("I")
   potion.use(player)
   assert player.manabda == 8
-
-
-def test_except_vial_restores_quarter_hp():
-  player = Wizard("Test", hp=100)
-  player.hp = 10
-  vial = ExceptVial()
-  vial.use(player)
-  assert player.hp == 35
-
-
-def test_except_vial_doesnt_exceed_max_hp():
-  player = Wizard("Test", hp=100)
-  player.hp = 90
-  vial = ExceptVial()
-  vial.use(player)
-  assert player.hp == 100
