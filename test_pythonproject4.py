@@ -13,6 +13,7 @@ from items import (Item, Consumable, Equipment, HPPotion, ManaPotion,
                    ManabdaPotion, PassRune, ExceptVial, FinallyFlask,
                    Cloak, Staff, Rod, Scepter)
 from spawn import EnemySpawner
+from entities.humanoid import DesperateTraveler, Enforcer, TitheCollector
 
 
 # ── LOCATION HIERARCHY ───────────────────────────────────────
@@ -404,3 +405,113 @@ def test_manabda_potion_does_not_exceed_max():
   potion = ManabdaPotion("I")
   potion.use(player)
   assert player.manabda == 8
+
+# ── GRIND ────────────────────────────────────────────────────
+
+from unittest.mock import patch, MagicMock
+from systems.grind import grind
+
+def make_player(level=1):
+  p = Wizard(name="Test", level=level, school="Pyromancy")
+  p.gold = 0
+  p.flags = {}
+  p.spells = ["Ignite"]
+  return p
+
+def test_grind_blocked_if_not_available():
+  p = make_player()
+
+  class NoGrind:
+    grind_available = False
+    level_cap = 4
+
+  grind(p, NoGrind)  # should just return, no error
+
+def test_grind_stops_at_grind_cap():
+  p = make_player(level=6)  # DrevsCave cap is 6, grind_cap = 8
+  with patch('builtins.input', return_value='y'):
+    with patch('systems.grind.simple_combat') as mock_combat:
+      grind(p, DrevsCave)
+      mock_combat.assert_not_called()
+
+def test_grind_player_gains_exp():
+  p = make_player(level=1)
+  starting_exp = p.exp
+  with patch('builtins.input', side_effect=['n']):
+    with patch('systems.grind.simple_combat') as mock_combat:
+      def kill_enemy(player, enemy):
+        enemy.hp = 0
+
+      mock_combat.side_effect = kill_enemy
+      grind(p, DrevsCave)
+  assert p.exp > starting_exp
+
+def test_grind_player_gains_gold():
+  p = make_player(level=1)
+  with patch('builtins.input', side_effect=['n']):
+    with patch('systems.grind.simple_combat') as mock_combat:
+      def kill_enemy(player, enemy):
+        enemy.hp = 0
+
+      mock_combat.side_effect = kill_enemy
+      grind(p, DrevsCave)
+  assert p.gold > 0
+
+def test_grind_stops_if_player_dies():
+  p = make_player(level=1)
+  with patch('systems.grind.simple_combat') as mock_combat:
+    def kill_player(player, enemy):
+      player.hp = 0
+
+    mock_combat.side_effect = kill_player
+    grind(p, DrevsCave)
+  assert not p.is_alive()
+
+# ── HUMANOID COMBAT ──────────────────────────────────────────
+
+from entities.humanoid import DesperateTraveler, Enforcer, TitheCollector
+
+def test_desperate_traveler_attack_damages_target():
+  traveler = DesperateTraveler()
+  target = Wizard(name="Test", level=1, school="Pyromancy")
+  starting_hp = target.hp
+  traveler.attack(target)
+  assert target.hp < starting_hp
+
+def test_desperate_traveler_attack_melee_damages_target():
+  traveler = DesperateTraveler()
+  traveler.mana = 0  # force melee branch
+  target = Wizard(name="Test", level=1, school="Pyromancy")
+  starting_hp = target.hp
+  traveler.attack(target)
+  assert target.hp < starting_hp
+
+def test_enforcer_attack_damages_target():
+  enforcer = Enforcer()
+  target = Wizard(name="Test", level=1, school="Pyromancy")
+  starting_hp = target.hp
+  enforcer.attack(target)
+  assert target.hp < starting_hp
+
+def test_enforcer_melee_damages_target():
+  enforcer = Enforcer()
+  enforcer.mana = 0
+  target = Wizard(name="Test", level=1, school="Pyromancy")
+  starting_hp = target.hp
+  enforcer.attack(target)
+  assert target.hp < starting_hp
+
+def test_tithe_collector_attack_damages_target():
+  collector = TitheCollector()
+  target = Wizard(name="Test", level=1, school="Pyromancy")
+  starting_hp = target.hp
+  collector.attack(target)
+  assert target.hp < starting_hp
+
+def test_tithe_collector_melee_damages_target():
+  collector = TitheCollector()
+  collector.mana = 0
+  target = Wizard(name="Test", level=1, school="Pyromancy")
+  starting_hp = target.hp
+  collector.attack(target)
+  assert target.hp < starting_hp

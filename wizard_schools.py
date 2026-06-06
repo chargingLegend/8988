@@ -105,12 +105,12 @@ def learn_spell_sort(self, method="gift"):
   return "You already understand the sort spell"
 
 
-def sort(self, location: dict):
+def sort(self, location):
   if "sort" not in self.spells:
     raise AttributeError("You trace the rune to be able to use the 'sort' ability, but it doesnt mean anything to you. not yet")
-  found = random.sample(location["common"], k=2)
+  found = random.sample(location.common, k=2)
   if random.random() < 0.10:
-    found.append(random.choice(location["uncommon"]))
+    found.append(random.choice(location.uncommon))
   for item in found:
     self.inventory.add(item)
   print(f"you focus on the Rune of sort")

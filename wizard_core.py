@@ -200,9 +200,11 @@ class Wizard:
       raise ValueError(f"The manabda is spent. Have {self.manabda}, need {cost}.")
 
   def cast_mana(self, spell_name, target=None):
-    if spell_name not in self.spells:
+    match = next((s for s in self.spells if s.lower() == spell_name.lower()), None)
+    if not match:
       print("The spell fizzles. You don't know it.")
       return False
+    spell_name = match
     if self.mana == 0:
       print("Nothing happens. The well, from which you draw your power is dry.")
       return False

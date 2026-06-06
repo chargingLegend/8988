@@ -1037,6 +1037,14 @@ if __name__ == "__main__":
   maren = Maren()
   maren.shop(player)
 
+  player.flags['vardeth_story_done'] = True
+  player.flags['maren_available'] = True
+  from systems.hub import hub
+  from location import Vardeth
+  hub(player, Vardeth)
+
+
+
   print(f"\n\n=== CHAPTER 1 COMPLETE ===")
   print(f"\n{player}")
   print(f"\nGold: {player.gold}")
