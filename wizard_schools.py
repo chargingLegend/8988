@@ -1,5 +1,7 @@
 import random
-from systems.status_effects import Burn, Scorched, Combusting
+from systems.status_effects import (Burn, Scorched, Combusting,
+  Frozen, Frostbitten, Slowed,
+  Disoriented, Stuttered, Shattered, Weakened)
 
 
 def choose_school(self, school):
@@ -11,9 +13,21 @@ def choose_school(self, school):
     print("The sensation is gratifying. Almost euphoric.")
     self.spells = ["Ignite", "Sear", "Cinder Ward"]
     self.spell_data = {
-      "Ignite": (3, 8, "fire", "flame catches on {target}'s feathers. It shrieks, blackened."),
-      "Sear": (2, 5, "fire", "a lance of heat lashes {target}. their Flesh starts to bubble from the intense heat."),
-      "Cinder Ward": (0, 0, "ward", "embers orbit you. No damage, but the air warps.")
+      "Ignite": {
+        "min_dmg": 4, "max_dmg": 11, "dmg_type": "fire",
+        "desc": "flame catches on {target}'s feathers. It shrieks, blackened.",
+        "effect": "Burn", "effect_chance": 0.5
+      },
+      "Sear": {
+        "min_dmg": 3, "max_dmg": 7, "dmg_type": "fire",
+        "desc": "a lance of heat lashes {target}. Flesh starts to bubble.",
+        "effect": "Scorched", "effect_chance": 0.3
+      },
+      "Cinder Ward": {
+        "min_dmg": 0, "max_dmg": 0, "dmg_type": "ward",
+        "desc": "embers orbit you. {target} feels the heat.",
+        "effect": None
+      },
     }
   elif school == "Cryomancy":
     print("Your breath fogs. Frost traces your fingertips.")
@@ -21,9 +35,21 @@ def choose_school(self, school):
     print("The world seems slower. Sharper. Distant.")
     self.spells = ["Frostbite", "Glaze", "Shard"]
     self.spell_data = {
-      "Frostbite": (2, 6, "cold", "ice crusts over {target}. Wings crack."),
-      "Glaze": (1, 3, "cold", "rime coats {target}. It moves like cold honey."),
-      "Shard": (3, 7, "cold", "a spear of ice punches through {target}.")
+      "Frostbite": {
+        "min_dmg": 3, "max_dmg": 8, "dmg_type": "cold",
+        "desc": "ice crusts over {target}. Wings crack.",
+        "effect": "Frostbitten", "effect_chance": 0.4
+      },
+      "Glaze": {
+        "min_dmg": 2, "max_dmg": 4, "dmg_type": "cold",
+        "desc": "rime coats {target}. It moves like cold honey.",
+        "effect": "Slowed", "effect_chance": 0.6
+      },
+      "Shard": {
+        "min_dmg": 4, "max_dmg": 9, "dmg_type": "cold",
+        "desc": "a spear of ice punches through {target}.",
+        "effect": None
+      },
     }
   elif school == "Chronomancy":
     print("The air ticks. Your shadow lags half a second behind you.")
@@ -31,9 +57,21 @@ def choose_school(self, school):
     print("Time feels loose. Negotiable.")
     self.spells = ["Hesitate", "Foresight", "Stutter"]
     self.spell_data = {
-      "Hesitate": (1, 4, "time", "{target} stutters mid-beat. Existence frays."),
-      "Foresight": (0, 0, "time", "you see {target}'s next beat. No damage, yet."),
-      "Stutter": (2, 5, "time", "{target} skips a moment. Parts of it arrive late.")
+      "Hesitate": {
+        "min_dmg": 2, "max_dmg": 6, "dmg_type": "time",
+        "desc": "{target} stutters mid-beat. Existence frays.",
+        "effect": None
+      },
+      "Foresight": {
+        "min_dmg": 0, "max_dmg": 0, "dmg_type": "time",
+        "desc": "you read {target}'s next beat before it arrives.",
+        "effect": "Stuttered", "effect_chance": 1.0
+      },
+      "Stutter": {
+        "min_dmg": 3, "max_dmg": 7, "dmg_type": "time",
+        "desc": "{target} skips a moment. Parts of it arrive late.",
+        "effect": "Slowed", "effect_chance": 0.35
+      },
     }
   elif school == "Necromancy":
     print("The ground chills under your feet. Your shadow deepens.")
@@ -41,9 +79,21 @@ def choose_school(self, school):
     print("Death recognizes you. And waits.")
     self.spells = ["Rattle", "Wither", "Gravechill"]
     self.spell_data = {
-      "Rattle": (2, 7, "necrotic", "{target}'s bones remember the grave. They protest."),
-      "Wither": (1, 6, "necrotic", "vitality flees {target} like startled crows."),
-      "Gravechill": (3, 6, "necrotic", "the cold of tombs settles in {target}.")
+      "Rattle": {
+        "min_dmg": 3, "max_dmg": 9, "dmg_type": "necrotic",
+        "desc": "{target}'s bones remember the grave. They protest.",
+        "effect": "Weakened", "effect_chance": 0.35
+      },
+      "Wither": {
+        "min_dmg": 2, "max_dmg": 8, "dmg_type": "necrotic",
+        "desc": "vitality flees {target} like startled crows.",
+        "effect": None
+      },
+      "Gravechill": {
+        "min_dmg": 4, "max_dmg": 8, "dmg_type": "necrotic",
+        "desc": "the cold of tombs settles in {target}.",
+        "effect": "Slowed", "effect_chance": 0.3
+      },
     }
   elif school == "Enhancement":
     print("Muscle fibers sing. Bones feel dense as iron.")
@@ -51,9 +101,21 @@ def choose_school(self, school):
     print("Strength is a word. Now it is a state.")
     self.spells = ["Brace", "Surge", "Iron Skin"]
     self.spell_data = {
-      "Brace": (0, 0, "force", "you root yourself. No damage to {target}."),
-      "Surge": (2, 6, "force", "kinetic wrath slams into {target}."),
-      "Iron Skin": (0, 0, "force", "your skin rings like struck steel. No damage.")
+      "Brace": {
+        "min_dmg": 0, "max_dmg": 0, "dmg_type": "force",
+        "desc": "you root yourself. {target} will find less purchase.",
+        "effect": None
+      },
+      "Surge": {
+        "min_dmg": 3, "max_dmg": 8, "dmg_type": "force",
+        "desc": "kinetic wrath slams into {target}.",
+        "effect": "Weakened", "effect_chance": 0.3
+      },
+      "Iron Skin": {
+        "min_dmg": 0, "max_dmg": 0, "dmg_type": "force",
+        "desc": "your skin rings like struck steel. {target} notices.",
+        "effect": None
+      },
     }
   elif school == "Illusion":
     print("Colors lie. The corner of your eye breeds movement.")
@@ -61,9 +123,21 @@ def choose_school(self, school):
     print("Truth becomes a choice, not a fact.")
     self.spells = ["Phantom", "Mutter", "False Step"]
     self.spell_data = {
-      "Phantom": (1, 4, "psychic", "{target} strikes at horrors only it sees."),
-      "Mutter": (1, 3, "psychic", "whispers convince {target} it is already wounded."),
-      "False Step": (0, 0, "psychic", "{target} misjudges distance. No damage.")
+      "Phantom": {
+        "min_dmg": 2, "max_dmg": 6, "dmg_type": "psychic",
+        "desc": "{target} strikes at horrors only it sees.",
+        "effect": "Shattered", "effect_chance": 0.3
+      },
+      "Mutter": {
+        "min_dmg": 2, "max_dmg": 5, "dmg_type": "psychic",
+        "desc": "whispers convince {target} it is already wounded.",
+        "effect": "Weakened", "effect_chance": 0.4
+      },
+      "False Step": {
+        "min_dmg": 0, "max_dmg": 0, "dmg_type": "psychic",
+        "desc": "{target} misjudges distance. Its next move commits to nothing.",
+        "effect": "Shattered", "effect_chance": 0.65
+      },
     }
   elif school == "Conjuration":
     print("The space before you bends. Air thickens.")
@@ -71,9 +145,21 @@ def choose_school(self, school):
     print("The world feels less solid. More borrowed.")
     self.spells = ["Fetch", "Shardling", "Bind"]
     self.spell_data = {
-      "Fetch": (0, 0, "force", "you grasp at distance. {target} untouched."),
-      "Shardling": (2, 7, "force", "a conjured splinter hurls into {target}."),
-      "Bind": (1, 4, "force", "invisible cords seize {target}'s limbs.")
+      "Fetch": {
+        "min_dmg": 0, "max_dmg": 0, "dmg_type": "force",
+        "desc": "you grasp at distance. Something shifts near {target}.",
+        "effect": None
+      },
+      "Shardling": {
+        "min_dmg": 3, "max_dmg": 9, "dmg_type": "force",
+        "desc": "a conjured splinter hurls into {target}.",
+        "effect": None
+      },
+      "Bind": {
+        "min_dmg": 2, "max_dmg": 6, "dmg_type": "force",
+        "desc": "invisible cords seize {target}'s limbs.",
+        "effect": "Slowed", "effect_chance": 0.55
+      },
     }
   elif school == "Shadow":
     print("Light bends away from you. Your edges blur.")
@@ -81,9 +167,22 @@ def choose_school(self, school):
     print("You feel unseen. And yet, watched.")
     self.spells = ["Dim", "Mutter", "Veil"]
     self.spell_data = {
-      "Dim": (0, 0, "shadow", "light flees {target}. It blinks, confused."),
-      "Mutter": (1, 5, "shadow", "dark words eat at {target}'s resolve."),
-      "Veil": (0, 0, "shadow", "you cease to be a target. For a moment.")
+      "Dim": {
+        "min_dmg": 1, "max_dmg": 3, "dmg_type": "shadow",
+        "desc": "light flees {target}. It blinks, confused.",
+        "effect": "Disoriented", "effect_chance": 0.75,
+        "cooldown_key": "dim", "cooldown_turns": 3
+      },
+      "Mutter": {
+        "min_dmg": 2, "max_dmg": 7, "dmg_type": "shadow",
+        "desc": "dark words eat at {target}'s resolve.",
+        "effect": "Weakened", "effect_chance": 0.4
+      },
+      "Veil": {
+        "min_dmg": 0, "max_dmg": 0, "dmg_type": "shadow",
+        "desc": "you cease to be a target. {target} loses you.",
+        "effect": None
+      },
     }
   elif school == "Transmutation":
     print("Your fingertips tingle. Stone would answer if you asked.")
@@ -91,9 +190,21 @@ def choose_school(self, school):
     print("Matter is a suggestion.")
     self.spells = ["Shift", "Harden", "Gild"]
     self.spell_data = {
-      "Shift": (1, 5, "arcane", "{target}'s mass forgets itself for a second."),
-      "Harden": (0, 0, "arcane", "air becomes stone. Not at {target}."),
-      "Gild": (2, 6, "arcane", "{target}'s edges turn brittle-gold, then crack.")
+      "Shift": {
+        "min_dmg": 2, "max_dmg": 7, "dmg_type": "arcane",
+        "desc": "{target}'s mass forgets itself for a second.",
+        "effect": "Weakened", "effect_chance": 0.35
+      },
+      "Harden": {
+        "min_dmg": 0, "max_dmg": 0, "dmg_type": "arcane",
+        "desc": "air becomes stone around you. {target} feels the shift.",
+        "effect": None
+      },
+      "Gild": {
+        "min_dmg": 3, "max_dmg": 8, "dmg_type": "arcane",
+        "desc": "{target}'s edges turn brittle-gold, then crack.",
+        "effect": "Weakened", "effect_chance": 0.45
+      },
     }
 
 
@@ -105,12 +216,12 @@ def learn_spell_sort(self, method="gift"):
   return "You already understand the sort spell"
 
 
-def sort(self, location):
+def sort(self, location: dict):
   if "sort" not in self.spells:
     raise AttributeError("You trace the rune to be able to use the 'sort' ability, but it doesnt mean anything to you. not yet")
-  found = random.sample(location.common, k=2)
+  found = random.sample(location["common"], k=2)
   if random.random() < 0.10:
-    found.append(random.choice(location.uncommon))
+    found.append(random.choice(location["uncommon"]))
   for item in found:
     self.inventory.add(item)
   print(f"you focus on the Rune of sort")
@@ -326,3 +437,26 @@ def unlock_abilities(self):
     self.learn_spell_sort()
 
 
+# ── SCHOOL_DATA for test imports ──────────────────────────────
+
+SCHOOL_DATA = {
+  "Pyromancy": {
+    "spells": {
+      "Ignite": {
+        "min_dmg": 4, "max_dmg": 11, "dmg_type": "fire",
+        "desc": "flame catches on {target}'s feathers. It shrieks, blackened.",
+        "effect": "Burn", "effect_chance": 0.5
+      },
+      "Sear": {
+        "min_dmg": 3, "max_dmg": 7, "dmg_type": "fire",
+        "desc": "a lance of heat lashes {target}. Flesh starts to bubble.",
+        "effect": "Scorched", "effect_chance": 0.3
+      },
+      "Cinder Ward": {
+        "min_dmg": 0, "max_dmg": 0, "dmg_type": "ward",
+        "desc": "embers orbit you. {target} feels the heat.",
+        "effect": None
+      },
+    }
+  },
+}

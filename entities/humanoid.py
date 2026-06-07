@@ -51,19 +51,35 @@ class DesperateTraveler(Humanoid):
     self.manabda = 6
     self.faction = "Travelers"
     self.spells = ["Dim", "Mutter", "Veil"]
+    self.spell_cooldowns = {}  # tracks dim cooldown
     self.spell_data = {
-      "Dim": (0, 0, "shadow", "light flees {target}. It blinks, confused."),
-      "Mutter": (1, 5, "shadow", "dark words find the cracks in {target}'s resolve."),
-      "Veil": (0, 0, "shadow", "he steps sideways out of your sight. For a moment.")
+      "Dim": {
+        "min_dmg": 1, "max_dmg": 3, "dmg_type": "shadow",
+        "desc": "light flees {target}. It blinks, confused.",
+        "effect": "Disoriented", "effect_chance": 0.75,
+        "cooldown_key": "dim", "cooldown_turns": 3
+      },
+      "Mutter": {
+        "min_dmg": 1, "max_dmg": 5, "dmg_type": "shadow",
+        "desc": "dark words find the cracks in {target}'s resolve.",
+        "effect": "Weakened", "effect_chance": 0.4
+      },
+      "Veil": {
+        "min_dmg": 0, "max_dmg": 0, "dmg_type": "shadow",
+        "desc": "he steps sideways out of your sight. For a moment.",
+        "effect": None
+      }
     }
     self.fled = False
 
   def attack(self, target):
+    from systems.status_effects import Disoriented
     roll = random.randint(1, 100)
-    target_low_hp = target.hp <= target.max_hp * 0.25
 
-    # ── tactical escalation: target is near death ─────────────
-    if target_low_hp and self.mana >= 4:
+    # ── tactical escalation: only if target is level 2+ ─────
+    target_low_hp = target.hp <= target.max_hp * 0.25
+    target_leveled = hasattr(target, 'level') and target.level >= 2
+    if target_low_hp and target_leveled and self.mana >= 4:
       self.mana -= 4
       dmg = random.randint(6, 11) + self.atk
       print(f"\nHe sees it in your eyes.")
@@ -73,6 +89,23 @@ class DesperateTraveler(Humanoid):
       print(f"'Veil.' Whispered. Final.")
       print(f"The darkness hits like it has weight. {dmg} shadow damage.")
       print(f"Mana: {self.mana}/{self.max_mana}")
+      target.take_damage(dmg, "shadow")
+      return dmg
+
+    # ── Dim: cooldown + no stacking ──────────────────────────
+    dim_ready = self.spell_cooldowns.get("dim", 0) <= 0
+    dim_not_active = not Disoriented.is_active(target)
+    if self.mana >= 2 and roll > 70 and dim_ready and dim_not_active:
+      self.mana -= 2
+      dmg = random.randint(1, 3) + self.atk
+      print(f"\nThe light around you bends wrong.")
+      print(f"'Dim.' Barely a word. More like a decision.")
+      print(f"Something hits you in the confusion. {dmg} shadow damage.")
+      if random.random() < 0.75:
+        target.add_status(Disoriented(duration=2))
+        print(f"You feel the disorientation take hold. Spells may fail.")
+      print(f"Mana: {self.mana}/{self.max_mana}")
+      self.spell_cooldowns["dim"] = 3
       target.take_damage(dmg, "shadow")
       return dmg
 
@@ -364,6 +397,7 @@ class TitheCollector(Humanoid):
     self.manabda = 25
     self.faction = "Ruling Class"
     self.spells = ["Soul Levy", "Audit"]
+    self.status_immunities = ["Disoriented"]  # methodical, cold — doesn't lose focus
 
   def attack(self, target):
     target_low_hp = target.hp <= target.max_hp * 0.25

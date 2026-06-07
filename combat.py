@@ -39,6 +39,29 @@ def _dispatch_ability(player, enemy):
   return True
 
 
+def _check_charge_interrupt(entity, dmg_dealt):
+  """Interrupt a special move charge if hit for >= 30% max HP."""
+  from systems.status_effects import Charging
+  for effect in entity.status_effects[:]:
+    if isinstance(effect, Charging):
+      threshold = getattr(entity, 'max_hp', 100) * 0.30
+      if dmg_dealt >= threshold:
+        msg = effect.interrupt(entity)
+        entity.status_effects.remove(effect)
+        print(f"\n{msg}")
+        return True
+  return False
+
+
+def _tick_entity_cooldowns(entity):
+  """Tick enemy spell cooldowns if present."""
+  if hasattr(entity, 'spell_cooldowns'):
+    for key in list(entity.spell_cooldowns):
+      entity.spell_cooldowns[key] -= 1
+      if entity.spell_cooldowns[key] <= 0:
+        del entity.spell_cooldowns[key]
+
+
 def simple_combat(player, enemy):
   print(f"\n=== COMBAT: {player.name} vs {enemy.name} ===")
 
@@ -68,6 +91,17 @@ def simple_combat(player, enemy):
     if not enemy.is_alive():
       break
 
+    # ── spell cooldown ticks ──────────────────────────────────
+    if hasattr(player, 'tick_spell_cooldowns'):
+      player.tick_spell_cooldowns()
+    _tick_entity_cooldowns(enemy)
+
+    # ── skip turn check (Slowed, Shattered, etc) ──────────────
+    if getattr(enemy, 'skip_turn', False):
+      enemy.skip_turn = False
+      print(f"\n{enemy.name} cannot act this turn.")
+      continue
+
     # ── companion passives ────────────────────────────────────
     if mira and mira.is_alive():
       mira.passive_check(player)
@@ -81,7 +115,12 @@ def simple_combat(player, enemy):
     if mira and mira.is_alive():
       print(f"Mira: {mira.hp}/{mira.max_hp} HP | Type 'mira' to ask for healing.")
 
-    action = input("\nCast spell, type 'ability', 'mira', or 'flee': ").strip().lower()
+    # ── active status effects on player ──────────────────────
+    if player.status_effects:
+      active = [e.name for e in player.status_effects]
+      print(f"Status: {', '.join(active)}")
+
+    action = input("\nSpell name, 'ability', 'mira', or 'flee': ").strip().lower()
 
     # ── flee ──────────────────────────────────────────────────
     if action == 'flee':
@@ -103,7 +142,7 @@ def simple_combat(player, enemy):
       if ability_used and enemy.is_alive():
         dmg = enemy.attack(player)
         if dmg:
-          player.take_damage(dmg)
+          _check_charge_interrupt(player, dmg)
       continue
 
     # ── spell cast ────────────────────────────────────────────
@@ -115,8 +154,11 @@ def simple_combat(player, enemy):
     if spell_hit:
       print()
       is_frozen = any(type(e).__name__ == "Frozen" for e in enemy.status_effects)
+      is_shattered = any(type(e).__name__ == "Shattered" for e in enemy.status_effects)
       if is_frozen:
         print(f"{enemy.name} is frozen solid. It cannot act.")
+      elif is_shattered:
+        print(f"{enemy.name} is shattered. It cannot act.")
       else:
         if player.inventory.has_item("Pass Rune"):
           print(f"\n{enemy.name} winds up to strike!")
@@ -128,11 +170,11 @@ def simple_combat(player, enemy):
           else:
             dmg = enemy.attack(player)
             if dmg:
-              player.take_damage(dmg)
+              _check_charge_interrupt(player, dmg)
         else:
           dmg = enemy.attack(player)
           if dmg:
-            player.take_damage(dmg)
+            _check_charge_interrupt(player, dmg)
 
     reacted = False
 
@@ -187,5 +229,16 @@ def simple_combat(player, enemy):
       print(f"She's pale. Unsteady.")
       print(f"'I'm alright.' She says it again.")
       print(f"You're not sure either of you believes it.")
+
+  # ── post combat rewards ───────────────────────────────────
+  if not enemy.is_alive():
+    if enemy.gold_reward:
+      player.gold = getattr(player, 'gold', 0) + enemy.gold_reward
+      print(f"\n+{enemy.gold_reward} gold. Total: {player.gold}")
+    drops = enemy.drop_loot()
+    if drops:
+      print(f"Among the remains — {', '.join(drops)}.")
+      for drop in drops:
+        player.inventory.add(drop)
 
   print("\n=== COMBAT ENDS ===")

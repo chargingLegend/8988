@@ -33,6 +33,7 @@ class Wizard:
     self.minions = []
     self.last_killed = None
     self.sort_acquired_by = None
+    self.morality = 0  # 0-3 neutral | 4-7 shady | 8+ dark
 
   def __repr__(self) -> str:
     return (f"{self.name} the {self.school} Wizard | "
@@ -200,39 +201,150 @@ class Wizard:
       raise ValueError(f"The manabda is spent. Have {self.manabda}, need {cost}.")
 
   def cast_mana(self, spell_name, target=None):
+    from systems.status_effects import (Disoriented, Burn, Frostbitten,
+      Slowed, Stuttered, Shattered, Weakened)
+
     match = next((s for s in self.spells if s.lower() == spell_name.lower()), None)
     if not match:
       print("The spell fizzles. You don't know it.")
       return False
     spell_name = match
+
     if self.mana == 0:
       print("Nothing happens. The well, from which you draw your power is dry.")
       return False
+
+    # ── disoriented fizzle check ──────────────────────────────
+    if Disoriented.is_active(self):
+      if Disoriented.roll_fizzle():
+        self.mana -= 1
+        print(f"*mana burns* mana left: {self.mana}")
+        print(f"The disorientation takes hold. '{spell_name}' slips away before it forms.")
+        print(f"The well gave something. The spell gave nothing.")
+        return False
+
     self.mana -= 1
     print(f"*mana burns. One less in the well.* mana left: {self.mana}")
-    min_dmg, max_dmg, dmg_type, desc = self.spell_data.get(spell_name, (1, 3, "arcane", "power lashes {target}."))
+
+    spell_entry = self.spell_data.get(spell_name)
+    if not spell_entry:
+      print("The spell fizzles. Something is missing from the weave.")
+      return False
+
+    # ── spell entry can be tuple (old) or dict (new with effects) ─
+    if isinstance(spell_entry, dict):
+      min_dmg = spell_entry.get("min_dmg", 0)
+      max_dmg = spell_entry.get("max_dmg", 0)
+      dmg_type = spell_entry.get("dmg_type", "arcane")
+      desc = spell_entry.get("desc", "power lashes {target}.")
+      effect = spell_entry.get("effect", None)
+      effect_chance = spell_entry.get("effect_chance", 1.0)
+      cooldown_key = spell_entry.get("cooldown_key", None)
+      cooldown_turns = spell_entry.get("cooldown_turns", 0)
+    else:
+      min_dmg, max_dmg, dmg_type, desc = spell_entry
+      effect = None
+      effect_chance = 1.0
+      cooldown_key = None
+      cooldown_turns = 0
+
+    # ── cooldown check ────────────────────────────────────────
+    if cooldown_key:
+      if not hasattr(self, 'spell_cooldowns'):
+        self.spell_cooldowns = {}
+      remaining = self.spell_cooldowns.get(cooldown_key, 0)
+      if remaining > 0:
+        print(f"'{spell_name}' is still recovering. {remaining} turn(s) remaining.")
+        self.mana += 1  # refund
+        return False
+
     power = self.get_spell_power(spell_name)
     min_dmg += power
     max_dmg += power * 2
+
+    # ── zero damage utility spells ────────────────────────────
     if min_dmg == 0 and max_dmg == 0:
       print(f"{self.name} weaves: '{spell_name}'.")
       if target:
         print(desc.format(target=target.name))
+        # apply effect even on zero-damage spells
+        if effect and random.random() < effect_chance:
+          self._apply_spell_effect(effect, target, spell_name)
       else:
         print(desc.format(target="the empty air"))
       return True
+
     if not target:
       print(f"{self.name} weaves '{spell_name}' but there is no target. Power dissipates.")
       return True
+
     dmg = random.randint(min_dmg, max_dmg)
     print(f"{self.name} weaves: '{spell_name}' Lvl{power}!")
     print(desc.format(target=target.name))
     target.take_damage(dmg, dmg_type)
-    if spell_name == "Ignite" and random.random() < 0.5:
+
+    # ── apply status effect ───────────────────────────────────
+    if effect and random.random() < effect_chance:
+      self._apply_spell_effect(effect, target, spell_name)
+
+    # ── set cooldown ──────────────────────────────────────────
+    if cooldown_key and cooldown_turns > 0:
+      if not hasattr(self, 'spell_cooldowns'):
+        self.spell_cooldowns = {}
+      self.spell_cooldowns[cooldown_key] = cooldown_turns
+
+    # ── legacy Ignite burn (backward compat) ─────────────────
+    if spell_name == "Ignite" and not effect and random.random() < 0.5:
       burn = Burn(duration=3, damage_per_turn=5)
       target.add_status(burn)
       print(f"{target.name} catches fire!")
+
     return True
+
+  def _apply_spell_effect(self, effect, target, spell_name):
+    """Apply a named status effect to target with stacking and immunity guards."""
+    from systems.status_effects import (Disoriented, Burn, Frostbitten,
+      Slowed, Stuttered, Shattered, Weakened)
+
+    # ── no stacking same effect ───────────────────────────────
+    existing_names = [type(e).__name__ for e in target.status_effects]
+    if effect in existing_names:
+      print(f"{target.name} is already {effect}. The effect doesn't stack.")
+      return
+
+    # ── boss/miniboss immunity check ──────────────────────────
+    immune = getattr(target, 'status_immunities', [])
+    if effect in immune:
+      print(f"{target.name} shrugs off {effect}. It's immune.")
+      return
+
+    effect_map = {
+      "Burn": lambda: Burn(duration=3, damage_per_turn=5),
+      "Frostbitten": lambda: Frostbitten(duration=3, damage_per_turn=3),
+      "Slowed": lambda: Slowed(duration=3),
+      "Disoriented": lambda: Disoriented(duration=2),
+      "Stuttered": lambda: Stuttered(duration=1),
+      "Shattered": lambda: Shattered(duration=2),
+      "Weakened": lambda: Weakened(duration=3, atk_reduction=2, defense_reduction=1),
+    }
+    factory = effect_map.get(effect)
+    if factory:
+      status = factory()
+      target.add_status(status)
+      print(f"{target.name} is now {effect}!")
+    else:
+      print(f"Unknown effect: {effect}. Nothing happens.")
+
+  def tick_spell_cooldowns(self):
+    """Call once per combat turn to decrement cooldowns."""
+    if not hasattr(self, 'spell_cooldowns'):
+      return
+    for key in list(self.spell_cooldowns):
+      self.spell_cooldowns[key] -= 1
+      if self.spell_cooldowns[key] <= 0:
+        del self.spell_cooldowns[key]
+
+
 
   def cast_manabda(self, ability_name, target=None):
     if ability_name not in self.abilities:

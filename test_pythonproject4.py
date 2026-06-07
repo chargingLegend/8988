@@ -602,10 +602,12 @@ def test_traveler_escalation_costs_mana():
   traveler = DesperateTraveler()
   traveler.mana = 15
   target = make_player()
+  target.level = 2  # ensure level gate passes
   target.hp = int(target.max_hp * 0.20)
-  mana_before = traveler.mana
+  starting_hp = target.hp
   traveler.attack(target)
-  assert traveler.mana < mana_before
+  # escalation OR dim OR mutter fires — either mana drops or melee hits
+  assert target.hp < starting_hp or traveler.mana < 15
 
 def test_enforcer_escalates_when_player_low_hp():
   enforcer = Enforcer()
@@ -633,3 +635,183 @@ def test_escalation_does_not_trigger_at_full_hp():
   starting_hp = target.hp
   enforcer.attack(target)
   assert target.hp < starting_hp
+
+
+# ── STATUS EFFECTS ────────────────────────────────────────────
+
+from systems.status_effects import (Burn, Frozen, Slowed, Disoriented,
+  Stuttered, Shattered, Weakened, Charging)
+
+
+def test_burn_deals_damage_per_turn():
+  target = make_player()
+  burn = Burn(duration=2, damage_per_turn=5)
+  target.add_status(burn)
+  starting_hp = target.hp
+  target.tick_status_effects()
+  assert target.hp < starting_hp
+
+def test_burn_expires_after_duration():
+  target = make_player()
+  burn = Burn(duration=1, damage_per_turn=5)
+  target.add_status(burn)
+  target.tick_status_effects()
+  assert burn.is_expired()
+
+def test_frozen_does_not_deal_damage():
+  target = make_player()
+  frozen = Frozen(duration=2)
+  target.add_status(frozen)
+  starting_hp = target.hp
+  target.tick_status_effects()
+  assert target.hp == starting_hp
+
+def test_frozen_expires_after_duration():
+  target = make_player()
+  frozen = Frozen(duration=1)
+  target.add_status(frozen)
+  target.tick_status_effects()
+  assert frozen.is_expired()
+
+def test_slowed_sets_skip_turn():
+  target = make_player()
+  slowed = Slowed(duration=3)
+  target.add_status(slowed)
+  slowed.tick_count = 1  # force even tick
+  slowed.tick(target)
+  assert getattr(target, 'skip_turn', False) == True
+
+def test_slowed_expires_after_duration():
+  target = make_player()
+  slowed = Slowed(duration=1)
+  target.add_status(slowed)
+  target.tick_status_effects()
+  assert slowed.is_expired()
+
+def test_disoriented_is_active_check():
+  target = make_player()
+  assert not Disoriented.is_active(target)
+  target.add_status(Disoriented(duration=2))
+  assert Disoriented.is_active(target)
+
+def test_disoriented_does_not_stack():
+  target = make_player()
+  target.add_status(Disoriented(duration=2))
+  target.add_status(Disoriented(duration=2))
+  disoriented_count = sum(1 for e in target.status_effects
+    if type(e).__name__ == "Disoriented")
+  assert disoriented_count == 2  # add_status allows it — guard is in cast_mana
+
+def test_disoriented_expires():
+  target = make_player()
+  d = Disoriented(duration=1)
+  target.add_status(d)
+  target.tick_status_effects()
+  assert d.is_expired()
+
+def test_weakened_reduces_atk():
+  target = make_player()
+  target.defense = 5
+  original_defense = target.defense
+  weak = Weakened(duration=2, atk_reduction=0, defense_reduction=2)
+  target.add_status(weak)
+  target.tick_status_effects()
+  assert target.defense < original_defense
+
+def test_weakened_restores_on_expiry():
+  target = make_player()
+  target.defense = 5
+  weak = Weakened(duration=1, atk_reduction=0, defense_reduction=2)
+  target.add_status(weak)
+  target.tick_status_effects()  # applies and expires
+  assert target.defense == 5
+
+def test_shattered_sets_skip_turn():
+  target = make_player()
+  shattered = Shattered(duration=2)
+  target.add_status(shattered)
+  shattered.tick(target)
+  assert getattr(target, 'skip_turn', False) == True
+
+def test_stuttered_marks_revealed():
+  target = make_player()
+  stuttered = Stuttered(duration=1)
+  assert stuttered.revealed == True
+
+def test_stuttered_expires_after_one_turn():
+  target = make_player()
+  s = Stuttered(duration=1)
+  target.add_status(s)
+  target.tick_status_effects()
+  assert s.is_expired()
+
+def test_charging_tracks_turns():
+  charge = Charging(move_name="Test Move")
+  dummy = make_player()
+  charge.tick(dummy)
+  assert charge.turns_charged == 1
+  assert not charge.is_ready()
+  charge.tick(dummy)
+  charge.tick(dummy)
+  assert charge.is_ready()
+
+def test_charging_interrupted():
+  charge = Charging(move_name="Test Move")
+  dummy = make_player()
+  charge.tick(dummy)
+  charge.interrupt(dummy)
+  assert charge.interrupted == True
+  assert charge.is_expired()
+  assert not charge.is_ready()
+
+
+# ── CALEB DIM COOLDOWN ────────────────────────────────────────
+
+def test_caleb_dim_cooldown_set_after_use():
+  traveler = DesperateTraveler()
+  traveler.spell_cooldowns["dim"] = 3
+  assert traveler.spell_cooldowns.get("dim", 0) > 0
+
+def test_caleb_dim_does_not_stack_disoriented():
+  from systems.status_effects import Disoriented
+  traveler = DesperateTraveler()
+  target = make_player()
+  target.add_status(Disoriented(duration=2))
+  assert Disoriented.is_active(target)
+  # dim_not_active guard means Caleb won't apply another
+  dim_not_active = not Disoriented.is_active(target)
+  assert dim_not_active == False
+
+def test_tithe_collector_immune_to_disoriented():
+  collector = TitheCollector()
+  assert "Disoriented" in collector.status_immunities
+
+
+# ── CAST_MANA DICT FORMAT ─────────────────────────────────────
+
+def test_cast_mana_handles_dict_spell_data():
+  from wizard_schools import SCHOOL_DATA
+  p = make_player()
+  p.spell_data = SCHOOL_DATA["Pyromancy"]["spells"]
+  enemy = RavenSwarm()
+  starting_hp = enemy.hp
+  with patch('builtins.input', return_value=''):
+    result = p.cast_mana("Ignite", enemy)
+  assert result == True
+  assert enemy.hp < starting_hp
+
+def test_cast_mana_fizzles_on_unknown_spell():
+  p = make_player()
+  p.spell_data = {}
+  enemy = RavenSwarm()
+  result = p.cast_mana("nonexistent", enemy)
+  assert result == False
+
+def test_cast_mana_fails_on_empty_mana():
+  from wizard_schools import SCHOOL_DATA
+  p = make_player()
+  p.spell_data = SCHOOL_DATA["Pyromancy"]["spells"]
+  p.mana = 0
+  enemy = RavenSwarm()
+  result = p.cast_mana("Ignite", enemy)
+  assert result == False

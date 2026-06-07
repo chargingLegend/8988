@@ -12,11 +12,11 @@ SPELL_DESCRIPTIONS = {
   "Pyromancy": {
     "Ignite": (
       "Fire finds purchase on anything that breathes.",
-      "(Deals 3-8 fire damage. 50% chance to apply Burn — 5 damage per turn for 3 turns.)"
+      "(Deals 4-11 fire damage. 50% chance to apply Burn — 5 damage per turn for 3 turns.)"
     ),
     "Sear": (
       "A lance of concentrated heat. Less elegant. More honest.",
-      "(Deals 2-5 fire damage.)"
+      "(Deals 3-7 fire damage. 30% chance to apply Scorched — 3 damage per turn for 2 turns.)"
     ),
     "Cinder Ward": (
       "The air around you warps. Let them wonder what it costs.",
@@ -26,43 +26,43 @@ SPELL_DESCRIPTIONS = {
   "Cryomancy": {
     "Frostbite": (
       "Cold that remembers where it's been.",
-      "(Deals 2-6 cold damage.)"
+      "(Deals 3-8 cold damage. 40% chance to apply Frostbitten — 3 damage per turn for 3 turns.)"
     ),
     "Glaze": (
       "Rime coats the target. Everything slows.",
-      "(Deals 1-3 cold damage. Target movement impaired.)"
+      "(Deals 2-4 cold damage. 60% chance to apply Slowed — target skips every other turn.)"
     ),
     "Shard": (
       "Ice doesn't ask permission.",
-      "(Deals 3-7 cold damage.)"
+      "(Deals 4-9 cold damage.)"
     ),
   },
   "Chronomancy": {
     "Hesitate": (
       "A moment stolen. Never returned.",
-      "(Deals 1-4 time damage. Target stutters.)"
+      "(Deals 2-6 time damage.)"
     ),
     "Foresight": (
       "You see the next beat before it arrives.",
-      "(No damage. Reveals target's next action.)"
+      "(No damage. Applies Stuttered — reveals target's next move. Player gets first strike priority.)"
     ),
     "Stutter": (
       "Parts of the target arrive late.",
-      "(Deals 2-5 time damage.)"
+      "(Deals 3-7 time damage. 35% chance to apply Slowed.)"
     ),
   },
   "Necromancy": {
     "Rattle": (
       "Bones remember the grave. You remind them.",
-      "(Deals 2-7 necrotic damage.)"
+      "(Deals 3-9 necrotic damage. 35% chance to apply Weakened — reduces target atk and defense.)"
     ),
     "Wither": (
       "Vitality flees like it has somewhere better to be.",
-      "(Deals 1-6 necrotic damage.)"
+      "(Deals 2-8 necrotic damage.)"
     ),
     "Gravechill": (
       "The cold of tombs is patient. You aren't.",
-      "(Deals 3-6 necrotic damage.)"
+      "(Deals 4-8 necrotic damage. 30% chance to apply Slowed.)"
     ),
   },
   "Enhancement": {
@@ -72,7 +72,7 @@ SPELL_DESCRIPTIONS = {
     ),
     "Surge": (
       "Kinetic wrath. Simple. Effective.",
-      "(Deals 2-6 force damage.)"
+      "(Deals 3-8 force damage. 30% chance to apply Weakened.)"
     ),
     "Iron Skin": (
       "Your skin rings like struck steel.",
@@ -82,15 +82,15 @@ SPELL_DESCRIPTIONS = {
   "Illusion": {
     "Phantom": (
       "Give them something worse than you to fight.",
-      "(Deals 1-4 psychic damage. Target strikes at phantoms.)"
+      "(Deals 2-6 psychic damage. 30% chance to apply Shattered — target loses their next turn.)"
     ),
     "Mutter": (
       "Whispers convince the target it is already losing.",
-      "(Deals 1-3 psychic damage.)"
+      "(Deals 2-5 psychic damage. 40% chance to apply Weakened.)"
     ),
     "False Step": (
       "Distance becomes a lie. They believe it.",
-      "(No damage. Target misjudges position.)"
+      "(No damage. 65% chance to apply Shattered — target commits to nothing.)"
     ),
   },
   "Conjuration": {
@@ -100,21 +100,21 @@ SPELL_DESCRIPTIONS = {
     ),
     "Shardling": (
       "A conjured splinter. Small. Fast. Angry.",
-      "(Deals 2-7 force damage.)"
+      "(Deals 3-9 force damage.)"
     ),
     "Bind": (
       "Invisible cords. Very visible results.",
-      "(Deals 1-4 force damage. Target movement restricted.)"
+      "(Deals 2-6 force damage. 55% chance to apply Slowed.)"
     ),
   },
   "Shadow": {
     "Dim": (
       "Light doesn't belong everywhere.",
-      "(No damage. Removes target from combat visibility.)"
+      "(Deals 1-3 shadow damage. 75% chance to apply Disoriented — 40% spell fizzle for 2 turns. 3-turn cooldown. Cannot stack.)"
     ),
     "Mutter": (
       "Dark words find the cracks in resolve.",
-      "(Deals 1-5 shadow damage.)"
+      "(Deals 2-7 shadow damage. 40% chance to apply Weakened.)"
     ),
     "Veil": (
       "You cease to be a target. For a moment.",
@@ -124,7 +124,7 @@ SPELL_DESCRIPTIONS = {
   "Transmutation": {
     "Shift": (
       "Mass forgets itself. Briefly.",
-      "(Deals 1-5 arcane damage.)"
+      "(Deals 2-7 arcane damage. 35% chance to apply Weakened.)"
     ),
     "Harden": (
       "Air becomes stone. Not at them. At you.",
@@ -132,7 +132,7 @@ SPELL_DESCRIPTIONS = {
     ),
     "Gild": (
       "Gold is brittle. They learn this firsthand.",
-      "(Deals 2-6 arcane damage. Target becomes brittle.)"
+      "(Deals 3-8 arcane damage. 45% chance to apply Weakened.)"
     ),
   },
 }
@@ -293,6 +293,7 @@ if __name__ == "__main__":
   player = Wizard(name=player_name)
   player.flags = {}
   player.gold = 0
+  player.morality = 0  # 0-3 neutral | 4-7 shady | 8+ dark
 
   print(f"\nThe terminal pulses once. Accepts it.")
   print(f"Somewhere, something was written down.")
@@ -612,6 +613,7 @@ if __name__ == "__main__":
           print("The bell swallows his words.")
           print("The slope takes you.")
           player.flags['travelers_ignored'] = True
+          player.morality += 1  # minor — indifference to someone in need
 
         elif choice_5 == "3":
           print("\nYou step toward him.")
@@ -703,6 +705,7 @@ if __name__ == "__main__":
           print("Then nothing.")
           print("The mountain doesn't comment.")
           player.flags['travelers_ignored'] = True
+          player.morality += 1  # minor — turned away from people who needed help
 
   elif choice_2 == "2":
     print("\nYou stay where you are.")
@@ -715,6 +718,7 @@ if __name__ == "__main__":
     print("\nThe bell tolls from below. Four times.")
     print("You count them without meaning to.")
     player.flags['travelers_ignored'] = True
+    player.morality += 1  # minor — stayed put, let it happen
 
   elif choice_2 == "3":
     print("\nYou turn away from the sound.")
@@ -990,6 +994,7 @@ if __name__ == "__main__":
       print("He looks you over once more.")
       print("'Don't make me regret it.'")
       player.flags['enforcer_aligned'] = True
+      player.morality += 3  # moderate — chose the oppressor's side
       if player.flags.get('maren_spoke_freely'):
         print("\nSomething occurs to you.")
         print("Something an old woman said in hushed tones.")
@@ -1024,18 +1029,77 @@ if __name__ == "__main__":
     print("The sky noticed.")
     print("It's keeping track.")
 
-  print("\n\nYou find her almost by accident.")
+  # ── morality tag: enforcer alignment ─────────────────────
+  if player.flags.get('enforcer_aligned'):
+    player.morality = max(player.morality, 3)  # minimum shady for full alignment
+
+  # ── approach to Maren's ───────────────────────────────────
+  print("\n\nYou find it almost by accident.")
   print("A door that doesn't announce itself.")
   print("No sign. No window.")
-  print("Just a door that's slightly warmer than the stone around it.")
-  print("You push it open.")
-  print("\nA counter. Old wood. Clean despite everything.")
-  print("Shelves behind it. Sparse but considered.")
-  print("And behind the counter —")
-  print("an elderly woman who doesn't look up when you enter.")
 
-  maren = Maren()
-  maren.shop(player)
+  if player.morality >= 8:
+    print("Just a door that's slightly warmer than the stone around it.")
+    print("You've stopped noticing things like that.")
+    print("Or maybe you've just stopped caring what they mean.")
+  elif player.morality >= 4:
+    print("Just a door that's slightly warmer than the stone around it.")
+    print("You notice it the way you notice everything now.")
+    print("Cataloguing. Assessing. Old habits are softer than new ones.")
+  else:
+    print("Just a door that's slightly warmer than the stone around it.")
+    print("In Vardeth, warmth from anywhere feels like it means something.")
+
+  print("\nThrough a smeared window, a woman moves behind the counter.")
+  print("Small shop. Cramped shelves.")
+  print("The glass has cracks that were never worth fixing —")
+  print("or maybe there was never money to.")
+  print("The place looks like it made peace with its own decline a long time ago.")
+  print("But the shelves have stock.")
+  print("In Vardeth, that alone means something.")
+
+  if player.flags.get('companion_mira'):
+    if player.morality >= 4:
+      print("\nMira stops one step behind you at the threshold.")
+      print("You don't see her face.")
+      print("You don't need to.")
+      print("She follows. She always follows.")
+      print("But something in the set of her shoulders is different now.")
+      print("Like she's carrying something she didn't have before.")
+    else:
+      print("\nMira glances at the window. Then at you.")
+      print("She glances at the shelves the way someone does")
+      print("when they haven't seen proper goods in a while.")
+      print("Just for a second.")
+      print("Then her face goes careful again.")
+      print("She doesn't say anything. She just follows.")
+
+  if player.flags.get('enforcer_aligned'):
+    print("\nThe woman inside clocks you before you reach the door.")
+    print("The way she straightens isn't welcome.")
+    print("It's bracing.")
+  else:
+    print("\nSomething about the door makes you slow down.")
+    print("Not fear. Something else.")
+    print("Like it's been waiting. Quietly. Without making a fuss about it.")
+
+  print("\n[1: Go in.]")
+  print("[2: Keep moving.]")
+  approach_choice = input("\nChoose: ").strip()
+
+  if approach_choice == "2":
+    print("\nYou walk past it.")
+    if player.flags.get('companion_mira'):
+      print("Mira doesn't say anything.")
+      print("But you hear her exhale.")
+      print("Just once. Controlled.")
+      print("'Okay.' That's all.")
+    print("\nThe street receives you back.")
+    print("The grates in the floor catch your eye.")
+    print("You keep walking.")
+  else:
+    maren = Maren()
+    maren.shop(player)
 
   player.flags['vardeth_story_done'] = True
   player.flags['maren_available'] = True
