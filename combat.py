@@ -101,7 +101,9 @@ def simple_combat(player, enemy):
     if action == 'ability':
       ability_used = _dispatch_ability(player, enemy)
       if ability_used and enemy.is_alive():
-        enemy.attack(player)
+        dmg = enemy.attack(player)
+        if dmg:
+          player.take_damage(dmg)
       continue
 
     # ── spell cast ────────────────────────────────────────────
@@ -124,9 +126,13 @@ def simple_combat(player, enemy):
             item.use(player)
             player.inventory.remove("Pass Rune")
           else:
-            enemy.attack(player)
+            dmg = enemy.attack(player)
+            if dmg:
+              player.take_damage(dmg)
         else:
-          enemy.attack(player)
+          dmg = enemy.attack(player)
+          if dmg:
+            player.take_damage(dmg)
 
     reacted = False
 

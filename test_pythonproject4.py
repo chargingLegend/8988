@@ -1,4 +1,5 @@
 import pytest
+from unittest.mock import patch, MagicMock
 
 from wizard import Wizard
 from entities.monster import (RavenSwarm, Rat, Bat, Goblin, Wolf,
@@ -14,6 +15,17 @@ from items import (Item, Consumable, Equipment, HPPotion, ManaPotion,
                    Cloak, Staff, Rod, Scepter)
 from spawn import EnemySpawner
 from entities.humanoid import DesperateTraveler, Enforcer, TitheCollector
+from systems.grind import grind
+
+
+# ── HELPERS ──────────────────────────────────────────────────
+
+def make_player(level=1, school="Pyromancy"):
+  p = Wizard(name="Test", level=level, school=school)
+  p.gold = 0
+  p.flags = {}
+  p.spells = ["Ignite"]
+  return p
 
 
 # ── LOCATION HIERARCHY ───────────────────────────────────────
@@ -273,7 +285,7 @@ def test_spawner_mountain_boss():
   assert enemy.name == "Wraith"
 
 
-# ── WIZARD EXISTING TESTS (preserved) ───────────────────────
+# ── WIZARD ───────────────────────────────────────────────────
 
 def test_raven_swarm_inherits_from_monster():
   swarm = RavenSwarm()
@@ -406,17 +418,8 @@ def test_manabda_potion_does_not_exceed_max():
   potion.use(player)
   assert player.manabda == 8
 
+
 # ── GRIND ────────────────────────────────────────────────────
-
-from unittest.mock import patch, MagicMock
-from systems.grind import grind
-
-def make_player(level=1):
-  p = Wizard(name="Test", level=level, school="Pyromancy")
-  p.gold = 0
-  p.flags = {}
-  p.spells = ["Ignite"]
-  return p
 
 def test_grind_blocked_if_not_available():
   p = make_player()
@@ -425,12 +428,12 @@ def test_grind_blocked_if_not_available():
     grind_available = False
     level_cap = 4
 
-  grind(p, NoGrind)  # should just return, no error
+  grind(p, NoGrind)
 
 def test_grind_stops_at_grind_cap():
-  p = make_player(level=6)  # DrevsCave cap is 6, grind_cap = 8
+  p = make_player(level=8)  # DrevsCave cap=6, grind_cap=8, so level 8 is blocked
   with patch('builtins.input', return_value='y'):
-    with patch('systems.grind.simple_combat') as mock_combat:
+    with patch('combat.simple_combat') as mock_combat:
       grind(p, DrevsCave)
       mock_combat.assert_not_called()
 
@@ -438,10 +441,9 @@ def test_grind_player_gains_exp():
   p = make_player(level=1)
   starting_exp = p.exp
   with patch('builtins.input', side_effect=['n']):
-    with patch('systems.grind.simple_combat') as mock_combat:
+    with patch('combat.simple_combat') as mock_combat:
       def kill_enemy(player, enemy):
         enemy.hp = 0
-
       mock_combat.side_effect = kill_enemy
       grind(p, DrevsCave)
   assert p.exp > starting_exp
@@ -449,69 +451,185 @@ def test_grind_player_gains_exp():
 def test_grind_player_gains_gold():
   p = make_player(level=1)
   with patch('builtins.input', side_effect=['n']):
-    with patch('systems.grind.simple_combat') as mock_combat:
+    with patch('combat.simple_combat') as mock_combat:
       def kill_enemy(player, enemy):
         enemy.hp = 0
-
       mock_combat.side_effect = kill_enemy
       grind(p, DrevsCave)
   assert p.gold > 0
 
 def test_grind_stops_if_player_dies():
   p = make_player(level=1)
-  with patch('systems.grind.simple_combat') as mock_combat:
+  with patch('combat.simple_combat') as mock_combat:
     def kill_player(player, enemy):
       player.hp = 0
-
     mock_combat.side_effect = kill_player
     grind(p, DrevsCave)
   assert not p.is_alive()
 
+
 # ── HUMANOID COMBAT ──────────────────────────────────────────
 
-from entities.humanoid import DesperateTraveler, Enforcer, TitheCollector
-
-def test_desperate_traveler_attack_damages_target():
+def test_traveler_spell_attack_reduces_player_hp():
   traveler = DesperateTraveler()
-  target = Wizard(name="Test", level=1, school="Pyromancy")
+  traveler.mana = 15
+  target = make_player()
+  starting_hp = target.hp
+  with patch('random.randint', side_effect=[90, 5]):
+    traveler.attack(target)
+  assert target.hp < starting_hp
+
+def test_traveler_melee_attack_reduces_player_hp():
+  traveler = DesperateTraveler()
+  traveler.mana = 0
+  target = make_player()
   starting_hp = target.hp
   traveler.attack(target)
   assert target.hp < starting_hp
 
-def test_desperate_traveler_attack_melee_damages_target():
+def test_traveler_attack_returns_dmg_value():
   traveler = DesperateTraveler()
-  traveler.mana = 0  # force melee branch
-  target = Wizard(name="Test", level=1, school="Pyromancy")
-  starting_hp = target.hp
-  traveler.attack(target)
-  assert target.hp < starting_hp
+  traveler.mana = 0
+  target = make_player()
+  result = traveler.attack(target)
+  assert isinstance(result, int)
+  assert result > 0
 
-def test_enforcer_attack_damages_target():
+def test_traveler_attack_does_not_drain_mana_on_melee():
+  traveler = DesperateTraveler()
+  traveler.mana = 0
+  target = make_player()
+  traveler.attack(target)
+  assert traveler.mana == 0
+
+def test_enforcer_spell_attack_reduces_player_hp():
   enforcer = Enforcer()
-  target = Wizard(name="Test", level=1, school="Pyromancy")
+  enforcer.mana = 20
+  target = make_player()
   starting_hp = target.hp
-  enforcer.attack(target)
+  with patch('random.randint', side_effect=[90, 5]):
+    enforcer.attack(target)
   assert target.hp < starting_hp
 
-def test_enforcer_melee_damages_target():
+def test_enforcer_melee_attack_reduces_player_hp():
   enforcer = Enforcer()
   enforcer.mana = 0
-  target = Wizard(name="Test", level=1, school="Pyromancy")
+  target = make_player()
   starting_hp = target.hp
   enforcer.attack(target)
   assert target.hp < starting_hp
 
-def test_tithe_collector_attack_damages_target():
+def test_enforcer_attack_returns_dmg_value():
+  enforcer = Enforcer()
+  enforcer.mana = 0
+  target = make_player()
+  result = enforcer.attack(target)
+  assert isinstance(result, int)
+  assert result > 0
+
+def test_enforcer_mana_drain_costs_mana():
+  enforcer = Enforcer()
+  enforcer.mana = 20
+  target = make_player()
+  with patch('random.randint', side_effect=[90, 5]):
+    enforcer.attack(target)
+  assert enforcer.mana < 20
+
+def test_collector_soul_levy_reduces_player_hp():
   collector = TitheCollector()
-  target = Wizard(name="Test", level=1, school="Pyromancy")
+  collector.mana = 40
+  target = make_player()
+  starting_hp = target.hp
+  with patch('random.randint', side_effect=[90, 10]):
+    collector.attack(target)
+  assert target.hp < starting_hp
+
+def test_collector_audit_reduces_player_hp():
+  collector = TitheCollector()
+  collector.mana = 5
+  target = make_player()
   starting_hp = target.hp
   collector.attack(target)
   assert target.hp < starting_hp
 
-def test_tithe_collector_melee_damages_target():
+def test_collector_melee_reduces_player_hp():
   collector = TitheCollector()
   collector.mana = 0
-  target = Wizard(name="Test", level=1, school="Pyromancy")
+  target = make_player()
   starting_hp = target.hp
   collector.attack(target)
+  assert target.hp < starting_hp
+
+def test_collector_attack_returns_dmg_value():
+  collector = TitheCollector()
+  collector.mana = 0
+  target = make_player()
+  result = collector.attack(target)
+  assert isinstance(result, int)
+  assert result > 0
+
+def test_player_hp_never_goes_below_zero_from_attack():
+  enforcer = Enforcer()
+  enforcer.mana = 0
+  target = make_player()
+  target.hp = 1
+  enforcer.attack(target)
+  assert target.hp >= 0
+
+def test_player_is_dead_after_lethal_damage():
+  enforcer = Enforcer()
+  enforcer.mana = 0
+  target = make_player()
+  target.hp = 1
+  target.defense = 0
+  with patch('random.randint', return_value=50):
+    enforcer.attack(target)
+  assert not target.is_alive()
+
+
+# ── TACTICAL AI: ESCALATION AT 25% PLAYER HP ─────────────────
+
+def test_traveler_escalates_when_player_low_hp():
+  traveler = DesperateTraveler()
+  traveler.mana = 15
+  target = make_player()
+  target.hp = int(target.max_hp * 0.25)
+  starting_hp = target.hp
+  traveler.attack(target)
+  assert target.hp < starting_hp
+
+def test_traveler_escalation_costs_mana():
+  traveler = DesperateTraveler()
+  traveler.mana = 15
+  target = make_player()
+  target.hp = int(target.max_hp * 0.20)
+  mana_before = traveler.mana
+  traveler.attack(target)
+  assert traveler.mana < mana_before
+
+def test_enforcer_escalates_when_player_low_hp():
+  enforcer = Enforcer()
+  enforcer.mana = 20
+  target = make_player()
+  target.hp = int(target.max_hp * 0.20)
+  starting_hp = target.hp
+  enforcer.attack(target)
+  assert target.hp < starting_hp
+
+def test_collector_escalates_when_player_low_hp():
+  collector = TitheCollector()
+  collector.mana = 40
+  target = make_player()
+  target.hp = int(target.max_hp * 0.20)
+  starting_hp = target.hp
+  collector.attack(target)
+  assert target.hp < starting_hp
+
+def test_escalation_does_not_trigger_at_full_hp():
+  enforcer = Enforcer()
+  enforcer.mana = 20
+  target = make_player()
+  target.hp = target.max_hp
+  starting_hp = target.hp
+  enforcer.attack(target)
   assert target.hp < starting_hp

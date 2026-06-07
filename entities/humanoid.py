@@ -4,12 +4,13 @@ import random
 
 class Humanoid(Monster):
   def __init__(self, name="Villager", hp=20, desc="A person.", exp_value=10, atk=1, defense=0, level=1, gold_reward=0,
-               loot_table=None, abilities=None, age=None, flame_resistance=None):
+               loot_table=None, abilities=None, age=None, flame_resistance=None,
+               mana=10, max_mana=10, manabda=5):
     super().__init__(name, hp, desc, exp_value, atk, defense, level, gold_reward, loot_table, abilities, age,
                      flame_resistance)
-    self.mana = 10
-    self.max_mana = 10
-    self.manabda = 5
+    self.mana = mana
+    self.max_mana = max_mana
+    self.manabda = manabda
     self.faction = "Unaffiliated"
     self.can_talk = True
     self.spells = []
@@ -59,6 +60,21 @@ class DesperateTraveler(Humanoid):
 
   def attack(self, target):
     roll = random.randint(1, 100)
+    target_low_hp = target.hp <= target.max_hp * 0.25
+
+    # ── tactical escalation: target is near death ─────────────
+    if target_low_hp and self.mana >= 4:
+      self.mana -= 4
+      dmg = random.randint(6, 11) + self.atk
+      print(f"\nHe sees it in your eyes.")
+      print(f"The moment where something tips.")
+      print(f"He doesn't hesitate.")
+      print(f"Shadow folds around his blade. Both hands. Everything he has.")
+      print(f"'Veil.' Whispered. Final.")
+      print(f"The darkness hits like it has weight. {dmg} shadow damage.")
+      print(f"Mana: {self.mana}/{self.max_mana}")
+      target.take_damage(dmg, "shadow")
+      return dmg
 
     if self.mana >= 4 and roll > 60:
       self.mana -= 4
@@ -69,6 +85,7 @@ class DesperateTraveler(Humanoid):
       print(f"'Mutter.' He says it flat. Like a word he's said a thousand times.")
       print(f"Dark words find something soft. {dmg} shadow damage.")
       print(f"Mana: {self.mana}/{self.max_mana}")
+      target.take_damage(dmg, "shadow")
       return dmg
 
     elif self.mana >= 2 and roll > 40:
@@ -79,6 +96,7 @@ class DesperateTraveler(Humanoid):
       print(f"The light around him bends wrong for a moment.")
       print(f"Something hits you in the confusion. {dmg} shadow damage.")
       print(f"Mana: {self.mana}/{self.max_mana}")
+      target.take_damage(dmg, "shadow")
       return dmg
 
     else:
@@ -87,6 +105,7 @@ class DesperateTraveler(Humanoid):
       print(f"He draws a rusted dagger instead.")
       print(f"'Fine.' Like he's angry at himself.")
       print(f"The blade finds you anyway. {dmg} damage.")
+      target.take_damage(dmg, "physical")
       return dmg
 
   def on_low_hp(self):
@@ -298,14 +317,30 @@ class Enforcer(Humanoid):
     self.spells = ["Mana Drain"]
 
   def attack(self, target):
+    target_low_hp = target.hp <= target.max_hp * 0.25
+
+    # ── tactical escalation: target is near death ─────────────
+    if target_low_hp and self.mana >= 6:
+      self.mana -= 6
+      dmg = random.randint(10, 15) + self.atk
+      print(f"{self.name} sees the opening.")
+      print(f"The baton charges — both hands — full power.")
+      print(f"'Finish it.' He says it to himself, not you.")
+      print(f"The crack of it echoes off stone. {dmg} damage!")
+      print(f"Mana: {self.mana}/{self.max_mana}")
+      target.take_damage(dmg, "arcane")
+      return dmg
+
     if self.mana >= 4 and random.randint(1, 100) > 50:
       self.mana -= 4
       dmg = random.randint(5, 9) + self.atk
       print(f"{self.name} casts Mana Drain! Baton crackles! {dmg} damage! Mana: {self.mana}/{self.max_mana}")
+      target.take_damage(dmg, "arcane")
       return dmg
     else:
       dmg = random.randint(3, 7) + self.atk
       print(f"{self.name} swings a crackling baton! {dmg} damage!")
+      target.take_damage(dmg, "physical")
       return dmg
 
 
@@ -331,17 +366,35 @@ class TitheCollector(Humanoid):
     self.spells = ["Soul Levy", "Audit"]
 
   def attack(self, target):
+    target_low_hp = target.hp <= target.max_hp * 0.25
+
+    # ── tactical escalation: target is near death ─────────────
+    if target_low_hp and self.mana >= 10:
+      self.mana -= 10
+      dmg = random.randint(18, 26) + self.atk
+      print(f"{self.name} goes still.")
+      print(f"Something behind his eyes does the math.")
+      print(f"You can see the moment the number comes up.")
+      print(f"'Final Collection.' Flat. Administrative.")
+      print(f"He puts everything into it. Not rage. Efficiency. {dmg} arcane damage.")
+      print(f"Mana: {self.mana}/{self.max_mana}")
+      target.take_damage(dmg, "arcane")
+      return dmg
+
     if self.mana >= 8 and random.randint(1, 100) > 30:
       self.mana -= 8
       dmg = random.randint(10, 16) + self.atk
       print(f"{self.name} casts Soul Levy! Your mana feels weighed! {dmg} damage! Mana: {self.mana}/{self.max_mana}")
+      target.take_damage(dmg, "arcane")
       return dmg
     elif self.mana >= 5:
       self.mana -= 5
       dmg = random.randint(7, 12) + self.atk
       print(f"{self.name} casts Audit! Numbers burn in the air! {dmg} damage! Mana: {self.mana}/{self.max_mana}")
+      target.take_damage(dmg, "arcane")
       return dmg
     else:
       dmg = random.randint(6, 10) + self.atk
       print(f"{self.name} strikes with a ledger-bound staff! {dmg} damage!")
+      target.take_damage(dmg, "physical")
       return dmg
