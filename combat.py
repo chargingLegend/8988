@@ -120,7 +120,10 @@ def simple_combat(player, enemy):
       active = [e.name for e in player.status_effects]
       print(f"Status: {', '.join(active)}")
 
-    action = input("\nSpell name, 'ability', 'mira', or 'flee': ").strip().lower()
+    if mira and mira.is_alive():
+      action = input("\nSpell name, 'ability', 'mira', or 'flee': ").strip().lower()
+    else:
+      action = input("\nSpell name, 'ability', or 'flee': ").strip().lower()
 
     # ── flee ──────────────────────────────────────────────────
     if action == 'flee':

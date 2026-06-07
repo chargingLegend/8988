@@ -33,16 +33,6 @@ def grind(player, location):
 
     player.gain_exp(enemy.exp_value)
 
-    drops = enemy.drop_loot()
-    if drops:
-      print(f"\nAmong the remains — {', '.join(drops)}.")
-      for drop in drops:
-        player.inventory.add(drop)
-
-    if enemy.gold_reward:
-      player.gold = getattr(player, 'gold', 0) + enemy.gold_reward
-      print(f"+{enemy.gold_reward} gold. Total: {player.gold}")
-
     again = input("\nPush further? [y/n]: ").strip().lower()
     if again != 'y':
       print("\nYou step back. The dark recedes.")

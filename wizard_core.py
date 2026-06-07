@@ -33,7 +33,7 @@ class Wizard:
     self.minions = []
     self.last_killed = None
     self.sort_acquired_by = None
-    self.morality = 0  # 0-3 neutral | 4-7 shady | 8+ dark
+    self.corruption = 0  # 0 = clean | 1-3 = shady | 4-7 = dark | 8+ = corrupted
 
   def __repr__(self) -> str:
     return (f"{self.name} the {self.school} Wizard | "

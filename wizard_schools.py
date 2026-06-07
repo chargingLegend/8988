@@ -15,7 +15,7 @@ def choose_school(self, school):
     self.spell_data = {
       "Ignite": {
         "min_dmg": 4, "max_dmg": 11, "dmg_type": "fire",
-        "desc": "flame catches on {target}'s feathers. It shrieks, blackened.",
+        "desc": "flame catches on {target}. It shrieks, blackened.",
         "effect": "Burn", "effect_chance": 0.5
       },
       "Sear": {
@@ -216,16 +216,18 @@ def learn_spell_sort(self, method="gift"):
   return "You already understand the sort spell"
 
 
-def sort(self, location: dict):
+def sort(self, location):
   if "sort" not in self.spells:
     raise AttributeError("You trace the rune to be able to use the 'sort' ability, but it doesnt mean anything to you. not yet")
-  found = random.sample(location["common"], k=2)
-  if random.random() < 0.10:
-    found.append(random.choice(location["uncommon"]))
+  common = getattr(location, 'common', None) or location.get('common', [])
+  uncommon = getattr(location, 'uncommon', None) or location.get('uncommon', [])
+  found = random.sample(common, k=min(2, len(common)))
+  if random.random() < 0.10 and uncommon:
+    found.append(random.choice(uncommon))
   for item in found:
     self.inventory.add(item)
   print(f"you focus on the Rune of sort")
-  print(f"Found: {', '.join(found)}")
+  print(f"Found: {', '.join(str(i) for i in found)}")
   print(self.inventory)
 
 
@@ -444,7 +446,7 @@ SCHOOL_DATA = {
     "spells": {
       "Ignite": {
         "min_dmg": 4, "max_dmg": 11, "dmg_type": "fire",
-        "desc": "flame catches on {target}'s feathers. It shrieks, blackened.",
+        "desc": "flame catches on {target}. It shrieks, blackened.",
         "effect": "Burn", "effect_chance": 0.5
       },
       "Sear": {

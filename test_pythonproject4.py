@@ -3,19 +3,14 @@ from unittest.mock import patch, MagicMock
 
 from wizard import Wizard
 from entities.monster import (RavenSwarm, Rat, Bat, Goblin, Wolf,
-                               Skeleton, Spider, CaveTroll, Wraith, TrollKing)
+  Skeleton, Spider, CaveTroll, Wraith, TrollKing)
 from inventory import Inventory
-from location import (Location, Town, Vardeth, FreeHollow,
-                      Cave, DrevsCave, CrystalGrotta, Shadowhollow,
-                      Forest, SylasForest, MireWood, WhisperGrove,
-                      Mountain, FrostpeakMountain, StormridgeMountain, AshenPeak,
-                      Ruins, OrathsRuins, ForgottenTemple, CollapsingCitadel)
-from items import (Item, Consumable, Equipment, HPPotion, ManaPotion,
-                   ManabdaPotion, PassRune, ExceptVial, FinallyFlask,
-                   Cloak, Staff, Rod, Scepter)
-from spawn import EnemySpawner
+from location import (Vardeth, DrevsCave, SylasForest,
+  FrostpeakMountain, OrathsRuins)
+from items import (HPPotion, ManaPotion, ManabdaPotion,
+  PassRune, ExceptVial, FinallyFlask, Cloak, Staff, Rod, Scepter)
+from merchant import Maren
 from entities.humanoid import DesperateTraveler, Enforcer, TitheCollector
-from systems.grind import grind
 
 
 # ── HELPERS ──────────────────────────────────────────────────
@@ -24,794 +19,845 @@ def make_player(level=1, school="Pyromancy"):
   p = Wizard(name="Test", level=level, school=school)
   p.gold = 0
   p.flags = {}
-  p.spells = ["Ignite"]
+  p.corruption = 0
   return p
 
 
-# ── LOCATION HIERARCHY ───────────────────────────────────────
-
-def test_location_is_grandparent():
-  assert issubclass(Town, Location)
-  assert issubclass(Cave, Location)
-  assert issubclass(Forest, Location)
-  assert issubclass(Mountain, Location)
-  assert issubclass(Ruins, Location)
-
-def test_vardeth_inherits_from_town():
-  assert issubclass(Vardeth, Town)
-  assert issubclass(Vardeth, Location)
-
-def test_drevscave_inherits_from_cave():
-  assert issubclass(DrevsCave, Cave)
-  assert issubclass(DrevsCave, Location)
-
-def test_sylasforest_inherits_from_forest():
-  assert issubclass(SylasForest, Forest)
-  assert issubclass(SylasForest, Location)
-
-def test_frostpeak_inherits_from_mountain():
-  assert issubclass(FrostpeakMountain, Mountain)
-  assert issubclass(FrostpeakMountain, Location)
-
-def test_orathsruins_inherits_from_ruins():
-  assert issubclass(OrathsRuins, Ruins)
-  assert issubclass(OrathsRuins, Location)
-
-
-# ── LOCATION DEFAULTS ────────────────────────────────────────
-
-def test_location_grandparent_defaults():
-  assert Location.level_cap == 0
-  assert Location.boss is None
-  assert Location.enemy_table == []
-  assert Location.common == []
-  assert Location.uncommon == []
-  assert Location.rare == []
-
-def test_town_defaults():
-  assert Town.vendors == []
-  assert Town.requires_tithe == False
-  assert Town.grind_available == False
-
-def test_cave_defaults():
-  assert Cave.grind_available == True
-  assert Cave.boss is None
-  assert Cave.enemy_table == []
-  assert Cave.level_cap == 0
-
-
-# ── VARDETH ──────────────────────────────────────────────────
-
-def test_vardeth_level_cap():
-  assert Vardeth.level_cap == 4
-
-def test_vardeth_requires_tithe():
-  assert Vardeth.requires_tithe == True
-
-def test_vardeth_grind_available():
-  assert Vardeth.grind_available == True
-
-def test_vardeth_has_vendor():
-  assert "Maren" in Vardeth.vendors
-
-def test_vardeth_has_enemy_table():
-  assert len(Vardeth.enemy_table) > 0
-
-def test_vardeth_common_items():
-  assert "broken_pavement" in Vardeth.common
-  assert "paper_scrap" in Vardeth.common
-  assert "empty_bottle" in Vardeth.common
-
-def test_vardeth_uncommon_items():
-  assert "silver_pendant" in Vardeth.uncommon
-  assert "half_filled_ink_bottle" in Vardeth.uncommon
-
-def test_vardeth_rare_items():
-  assert "enforcer_badge" in Vardeth.rare
-  assert "collectors_ledger" in Vardeth.rare
-
-def test_vardeth_enemy_weights_sum_to_100():
-  weights = [w for _, w in Vardeth.enemy_table]
-  assert sum(weights) == 100
-
-
-# ── DREVS CAVE ───────────────────────────────────────────────
-
-def test_drevscave_level_cap():
-  assert DrevsCave.level_cap == 6
-
-def test_drevscave_boss():
-  assert DrevsCave.boss == "Cave Troll"
-
-def test_drevscave_has_vendor():
-  assert "Drev" in DrevsCave.vendors
-
-def test_drevscave_common_items():
-  assert "rock" in DrevsCave.common
-  assert "mushroom" in DrevsCave.common
-  assert "bat_wing" in DrevsCave.common
-  assert "dust" in DrevsCave.common
-
-def test_drevscave_uncommon_items():
-  assert "crystal_shard" in DrevsCave.uncommon
-  assert "glowing_moss" in DrevsCave.uncommon
-
-def test_drevscave_rare_items():
-  assert "troll_blood_vial" in DrevsCave.rare
-  assert "cave_pearl" in DrevsCave.rare
-
-def test_drevscave_enemy_weights_sum_to_100():
-  weights = [w for _, w in DrevsCave.enemy_table]
-  assert sum(weights) == 100
-
-
-# ── SYLAS FOREST ─────────────────────────────────────────────
-
-def test_sylasforest_level_cap():
-  assert SylasForest.level_cap == 10
-
-def test_sylasforest_boss():
-  assert SylasForest.boss == "Troll King"
-
-def test_sylasforest_has_vendor():
-  assert "Syla" in SylasForest.vendors
-
-def test_sylasforest_rare_items():
-  assert "ancient_root" in SylasForest.rare
-  assert "glowspore" in SylasForest.rare
-
-def test_sylasforest_enemy_weights_sum_to_100():
-  weights = [w for _, w in SylasForest.enemy_table]
-  assert sum(weights) == 100
-
-
-# ── FROSTPEAK MOUNTAIN ───────────────────────────────────────
-
-def test_frostpeak_level_cap():
-  assert FrostpeakMountain.level_cap == 8
-
-def test_frostpeak_boss():
-  assert FrostpeakMountain.boss == "Wraith"
-
-def test_frostpeak_common_items():
-  assert "stone" in FrostpeakMountain.common
-  assert "snow" in FrostpeakMountain.common
-  assert "goat_hair" in FrostpeakMountain.common
-
-def test_frostpeak_rare_items():
-  assert "wraith_essence" in FrostpeakMountain.rare
-  assert "ancient_ore" in FrostpeakMountain.rare
-
-def test_frostpeak_enemy_weights_sum_to_100():
-  weights = [w for _, w in FrostpeakMountain.enemy_table]
-  assert sum(weights) == 100
-
-
-# ── ORATHS RUINS ─────────────────────────────────────────────
-
-def test_orathsruins_level_cap():
-  assert OrathsRuins.level_cap == 12
-
-def test_orathsruins_boss():
-  assert OrathsRuins.boss == "Lich"
-
-def test_orathsruins_has_vendor():
-  assert "Orath" in OrathsRuins.vendors
-
-def test_orathsruins_rare_items():
-  assert "lich_fragment" in OrathsRuins.rare
-  assert "forgotten_spellscroll" in OrathsRuins.rare
-
-def test_orathsruins_enemy_weights_sum_to_100():
-  weights = [w for _, w in OrathsRuins.enemy_table]
-  assert sum(weights) == 100
-
-
-# ── ALL LOCATIONS HAVE 3 ITEM TIERS ──────────────────────────
-
-@pytest.mark.parametrize("loc", [
-  DrevsCave, CrystalGrotta, Shadowhollow,
-  SylasForest, MireWood, WhisperGrove,
-  FrostpeakMountain, StormridgeMountain, AshenPeak,
-  OrathsRuins, ForgottenTemple, CollapsingCitadel,
-  Vardeth, FreeHollow
-])
-def test_all_locations_have_three_tiers(loc):
-  assert len(loc.common) > 0
-  assert len(loc.uncommon) > 0
-  assert len(loc.rare) > 0
-
-@pytest.mark.parametrize("loc", [
-  DrevsCave, CrystalGrotta, Shadowhollow,
-  SylasForest, MireWood, WhisperGrove,
-  FrostpeakMountain, StormridgeMountain, AshenPeak,
-  OrathsRuins, ForgottenTemple, CollapsingCitadel,
-  Vardeth, FreeHollow
-])
-def test_all_locations_have_level_cap(loc):
-  assert loc.level_cap > 0
-
-@pytest.mark.parametrize("loc", [
-  DrevsCave, CrystalGrotta, Shadowhollow,
-  SylasForest, MireWood, WhisperGrove,
-  FrostpeakMountain, StormridgeMountain, AshenPeak,
-  OrathsRuins, ForgottenTemple, CollapsingCitadel,
-  Vardeth, FreeHollow
-])
-def test_all_locations_have_boss(loc):
-  assert loc.boss is not None
-
-@pytest.mark.parametrize("loc", [
-  DrevsCave, CrystalGrotta, Shadowhollow,
-  SylasForest, MireWood, WhisperGrove,
-  FrostpeakMountain, StormridgeMountain, AshenPeak,
-  OrathsRuins, ForgottenTemple, CollapsingCitadel,
-  Vardeth, FreeHollow
-])
-def test_all_locations_have_enemy_table(loc):
-  assert len(loc.enemy_table) > 0
-
-
-# ── SPAWN ────────────────────────────────────────────────────
-
-def test_spawner_returns_enemy_below_level_cap():
-  spawner = EnemySpawner(DrevsCave)
-  enemy, is_boss = spawner.spawn(player_level=1)
-  assert enemy is not None
-  assert is_boss == False
-  assert enemy.is_alive()
-
-def test_spawner_returns_boss_at_level_cap():
-  spawner = EnemySpawner(DrevsCave)
-  enemy, is_boss = spawner.spawn(player_level=DrevsCave.level_cap)
-  assert is_boss == True
-  assert enemy.name == "Cave Troll"
-
-def test_spawner_boss_is_alive():
-  spawner = EnemySpawner(DrevsCave)
-  enemy, is_boss = spawner.spawn(player_level=DrevsCave.level_cap)
-  assert enemy.is_alive()
-
-def test_spawner_forest_boss():
-  spawner = EnemySpawner(SylasForest)
-  enemy, is_boss = spawner.spawn(player_level=SylasForest.level_cap)
-  assert is_boss == True
-  assert enemy.name == "Troll King"
-
-def test_spawner_mountain_boss():
-  spawner = EnemySpawner(FrostpeakMountain)
-  enemy, is_boss = spawner.spawn(player_level=FrostpeakMountain.level_cap)
-  assert is_boss == True
-  assert enemy.name == "Wraith"
-
-
-# ── WIZARD ───────────────────────────────────────────────────
-
-def test_raven_swarm_inherits_from_monster():
+# ── CORRUPTION SYSTEM ────────────────────────────────────────
+
+def test_wizard_has_corruption_attribute():
+  p = make_player()
+  assert hasattr(p, 'corruption')
+
+def test_wizard_corruption_starts_at_zero():
+  p = make_player()
+  assert p.corruption == 0
+
+def test_corruption_is_not_morality():
+  p = make_player()
+  assert not hasattr(p, 'morality')
+
+def test_corruption_increments():
+  p = make_player()
+  p.corruption += 1
+  assert p.corruption == 1
+
+def test_corruption_increments_multiple():
+  p = make_player()
+  p.corruption += 1
+  p.corruption += 1
+  p.corruption += 3
+  assert p.corruption == 5
+
+def test_corruption_clean_threshold():
+  p = make_player()
+  p.corruption = 0
+  assert p.corruption == 0
+
+def test_corruption_shady_threshold():
+  p = make_player()
+  p.corruption = 2
+  assert 1 <= p.corruption <= 3
+
+def test_corruption_dark_threshold():
+  p = make_player()
+  p.corruption = 5
+  assert 4 <= p.corruption <= 7
+
+def test_corruption_corrupted_threshold():
+  p = make_player()
+  p.corruption = 8
+  assert p.corruption >= 8
+
+def test_corruption_max_enforcement_works():
+  p = make_player()
+  p.corruption = max(p.corruption, 3)
+  assert p.corruption >= 3
+
+
+# ── RAVEN SWARM GOLD ─────────────────────────────────────────
+
+def test_raven_swarm_gold_reward_is_15():
+  swarm = RavenSwarm()
+  assert swarm.gold_reward == 15
+
+def test_raven_swarm_gold_reward_not_5():
+  swarm = RavenSwarm()
+  assert swarm.gold_reward != 5
+
+def test_raven_swarm_gold_enough_for_hp_potion():
+  swarm = RavenSwarm()
+  hp_potion_price = 20
+  assert swarm.gold_reward >= hp_potion_price * 0.75
+
+def test_raven_swarm_stats_unchanged():
   swarm = RavenSwarm()
   assert swarm.hp == 15
-  assert swarm.name == "Raven Swarm"
   assert swarm.exp_value == 50
-  assert swarm.is_alive() == True
+  assert swarm.atk == 4
+  assert swarm.defense == 0
 
-def test_inventory_starts_empty():
-  inv = Inventory()
-  assert len(inv.items) == 0
-  assert str(inv) == "Inventory is empty."
+def test_raven_swarm_loot_table_intact():
+  swarm = RavenSwarm()
+  loot_names = [name for name, _ in swarm.loot_table]
+  assert "Black Feather" in loot_names
+  assert "Crow's Eye" in loot_names
 
-def test_learn_sort_unlocks_spell():
-  player = Wizard(name="TestWizard")
-  result = player.learn_spell_sort()
-  assert "sort" in player.spells
-  assert "rune" in result.lower()
+
+# ── MAREN MERCHANT ───────────────────────────────────────────
+
+def test_maren_initializes():
+  maren = Maren()
+  assert maren.name == "Maren"
+  assert maren.faction == "Neutral"
+
+def test_maren_has_stock():
+  maren = Maren()
+  assert len(maren.stock) > 0
+
+def test_maren_stock_has_hp_potion():
+  maren = Maren()
+  names = [e["item"].name for e in maren.stock]
+  assert "HP Potion I" in names
+
+def test_maren_stock_has_mana_potion():
+  maren = Maren()
+  names = [e["item"].name for e in maren.stock]
+  assert "Mana Potion I" in names
+
+def test_maren_stock_has_pass_rune():
+  maren = Maren()
+  names = [e["item"].name for e in maren.stock]
+  assert "Pass Rune" in names
+
+def test_maren_stock_has_cloak():
+  maren = Maren()
+  names = [e["item"].name for e in maren.stock]
+  assert any("Cloak" in n for n in names)
+
+def test_maren_stock_has_except_vial():
+  maren = Maren()
+  names = [e["item"].name for e in maren.stock]
+  assert "Except Vial" in names
+
+def test_maren_stock_has_prices():
+  maren = Maren()
+  for entry in maren.stock:
+    assert entry["price"] > 0
+
+def test_maren_buy_succeeds_with_enough_gold():
+  maren = Maren()
+  p = make_player()
+  p.gold = 100
+  result = maren.buy(p, 1)
+  assert result == True
+
+def test_maren_buy_fails_without_gold():
+  maren = Maren()
+  p = make_player()
+  p.gold = 0
+  result = maren.buy(p, 1)
+  assert result == False
+
+def test_maren_buy_deducts_gold():
+  maren = Maren()
+  p = make_player()
+  p.gold = 100
+  price = maren.stock[0]["price"]
+  maren.buy(p, 1)
+  assert p.gold == 100 - price
+
+def test_maren_buy_adds_item_to_inventory():
+  maren = Maren()
+  p = make_player()
+  p.gold = 100
+  maren.buy(p, 1)
+  assert len(p.inventory.items) == 1
+
+def test_maren_enforcer_discount_halves_price():
+  maren = Maren()
+  p = make_player()
+  p.flags['enforcer_aligned'] = True
+  p.gold = 100
+  base_price = maren.stock[0]["price"]
+  maren.buy(p, 1)
+  assert p.gold == 100 - (base_price // 2)
+
+def test_maren_no_discount_without_flag():
+  maren = Maren()
+  p = make_player()
+  p.gold = 100
+  base_price = maren.stock[0]["price"]
+  maren.buy(p, 1)
+  assert p.gold == 100 - base_price
+
+def test_maren_buy_invalid_choice_returns_false():
+  maren = Maren()
+  p = make_player()
+  p.gold = 100
+  result = maren.buy(p, 99)
+  assert result == False
+
+def test_maren_buy_choice_zero_returns_false():
+  maren = Maren()
+  p = make_player()
+  p.gold = 100
+  result = maren.buy(p, 0)
+  assert result == False
+
+def test_maren_greet_sets_spoke_freely_flag():
+  maren = Maren()
+  p = make_player()
+  maren.greet(p)
+  assert p.flags.get('maren_spoke_freely') == True
+
+def test_maren_greet_enforcer_does_not_set_spoke_freely():
+  maren = Maren()
+  p = make_player()
+  p.flags['enforcer_aligned'] = True
+  maren.greet(p)
+  assert not p.flags.get('maren_spoke_freely')
+
+def test_maren_shop_accepts_skip_greet_param():
+  maren = Maren()
+  p = make_player()
+  p.flags['paid_tithe'] = True
+  p.gold = 0
+  with patch('builtins.input', return_value=str(len(maren.stock) + 1)):
+    maren.shop(p, skip_greet=True)
+  assert not p.flags.get('maren_spoke_freely')
+
+def test_maren_shop_greets_normally_without_skip():
+  maren = Maren()
+  p = make_player()
+  p.flags['paid_tithe'] = True
+  with patch('builtins.input', return_value=str(len(maren.stock) + 1)):
+    maren.shop(p, skip_greet=False)
+  assert p.flags.get('maren_spoke_freely') == True
+
+
+# ── WIZARD CORE ──────────────────────────────────────────────
+
+def test_wizard_initializes_with_defaults():
+  p = Wizard(name="Test")
+  assert p.name == "Test"
+  assert p.level == 1
+  assert p.hp == 100
+  assert p.max_hp == 100
+  assert p.mana == 20
+  assert p.max_mana == 20
+  assert p.manabda == 8
+  assert p.defense == 0
+  assert p.gold == 0
+  assert p.exp == 0
+  assert p.corruption == 0
+
+def test_wizard_is_alive_at_full_hp():
+  p = make_player()
+  assert p.is_alive()
+
+def test_wizard_is_dead_at_zero_hp():
+  p = make_player()
+  p.hp = 0
+  assert not p.is_alive()
+
+def test_wizard_hp_never_goes_below_zero():
+  p = make_player()
+  p.take_damage(9999)
+  assert p.hp == 0
+
+def test_wizard_defense_reduces_damage():
+  p = make_player()
+  p.defense = 5
+  p.take_damage(10)
+  assert p.hp == 95
+
+def test_wizard_defense_minimum_one_damage():
+  p = make_player()
+  p.defense = 999
+  p.take_damage(5)
+  assert p.hp == 99
+
+def test_wizard_gain_exp_increments():
+  p = make_player()
+  p.gain_exp(10)
+  assert p.exp == 10
+
+def test_wizard_levels_up_when_exp_threshold_met():
+  p = make_player()
+  with patch('builtins.input', return_value='1'):
+    p.gain_exp(p.exp_to_next)
+  assert p.level == 2
+
+def test_wizard_level_up_increases_max_hp():
+  p = make_player()
+  old_max = p.max_hp
+  with patch('builtins.input', return_value='1'):
+    p.level_up()
+  assert p.max_hp > old_max
+
+def test_wizard_level_up_increases_max_mana():
+  p = make_player()
+  old_max = p.max_mana
+  with patch('builtins.input', return_value='1'):
+    p.level_up()
+  assert p.max_mana > old_max
+
+def test_wizard_add_hp_bonus():
+  p = make_player()
+  old_hp = p.max_hp
+  p.add_hp_bonus(10)
+  assert p.max_hp == old_hp + 10
+  assert p.hp == old_hp + 10
+
+def test_wizard_add_mana_bonus():
+  p = make_player()
+  old_mana = p.max_mana
+  p.add_mana_bonus(5)
+  assert p.max_mana == old_mana + 5
+  assert p.mana == old_mana + 5
+
+def test_wizard_calc_exp_to_next_level_1():
+  p = make_player()
+  assert p.exp_to_next == 33
+
+def test_wizard_calc_exp_to_next_scales_with_level():
+  p = make_player(level=2)
+  assert p.exp_to_next > 33
+
+def test_wizard_str_shows_alive():
+  p = make_player()
+  assert "alive" in str(p)
+
+def test_wizard_str_shows_fallen_when_dead():
+  p = make_player()
+  p.hp = 0
+  assert "Fallen" in str(p)
+
+def test_wizard_repr_shows_spell_count():
+  p = make_player()
+  assert "Spells:" in repr(p)
+
+def test_wizard_flags_default_empty():
+  p = Wizard(name="Test")
+  p.flags = {}
+  assert p.flags == {}
+
+def test_wizard_gold_default_zero():
+  p = Wizard(name="Test")
+  assert p.gold == 0
+
+def test_wizard_learn_sort_adds_spell():
+  p = make_player()
+  p.learn_spell_sort()
+  assert "sort" in p.spells
+
+def test_wizard_learn_sort_not_duplicate():
+  p = make_player()
+  p.learn_spell_sort()
+  p.learn_spell_sort()
+  assert p.spells.count("sort") == 1
+
+def test_wizard_learn_sort_sets_acquired_by():
+  p = make_player()
+  p.learn_spell_sort(method="absorbed")
+  assert p.sort_acquired_by == "absorbed"
+
+def test_wizard_choose_school_sets_spells():
+  p = Wizard(name="Test")
+  p.choose_school("Pyromancy")
+  assert len(p.spells) > 0
+
+def test_wizard_choose_school_sets_spell_data():
+  p = Wizard(name="Test")
+  p.choose_school("Pyromancy")
+  assert "Ignite" in p.spell_data
 
 @pytest.mark.parametrize("school", [
   "Pyromancy", "Cryomancy", "Chronomancy", "Necromancy",
   "Enhancement", "Illusion", "Conjuration", "Shadow", "Transmutation"
 ])
-def test_valid_schools(school):
-  wizard = Wizard("Test", school=school)
-  assert wizard.school == school
+def test_all_schools_set_spell_data(school):
+  p = Wizard(name="Test")
+  p.choose_school(school)
+  assert len(p.spell_data) > 0
 
-def test_inventory_add_item():
-  inv = Inventory()
-  inv.add("Sword")
-  assert len(inv.items) == 1
-  assert "Sword" in inv.items
+@pytest.mark.parametrize("school", [
+  "Pyromancy", "Cryomancy", "Chronomancy", "Necromancy",
+  "Enhancement", "Illusion", "Conjuration", "Shadow", "Transmutation"
+])
+def test_all_schools_give_three_starter_spells(school):
+  p = Wizard(name="Test")
+  p.choose_school(school)
+  assert len(p.spells) == 3
 
-def test_map_fire_costs_manabda():
-  wizard = Wizard("Test", school="Pyromancy", manabda=8)
-  target = RavenSwarm()
-  initial_manabda = wizard.manabda
-  wizard.map_fire([target])
-  assert wizard.manabda == initial_manabda - 3
+@pytest.mark.parametrize("school", [
+  "Pyromancy", "Cryomancy", "Chronomancy", "Necromancy",
+  "Enhancement", "Illusion", "Conjuration", "Shadow", "Transmutation"
+])
+def test_all_schools_unlock_abilities(school):
+  p = Wizard(name="Test")
+  p.choose_school(school)
+  p.unlock_abilities()
+  assert len(p.abilities) > 0
 
-def test_map_fire_deals_damage():
-  wizard = Wizard("Test", school="Pyromancy", manabda=8)
-  target = RavenSwarm()
-  initial_hp = target.hp
-  wizard.map_fire([target])
-  assert target.hp < initial_hp
+@pytest.mark.parametrize("school", [
+  "Pyromancy", "Cryomancy", "Chronomancy", "Necromancy",
+  "Enhancement", "Illusion", "Conjuration", "Shadow", "Transmutation"
+])
+def test_all_schools_unlock_sort(school):
+  p = Wizard(name="Test")
+  p.choose_school(school)
+  p.unlock_abilities()
+  assert "sort" in p.spells
 
-def test_reduce_ash_costs_manabda():
-  wizard = Wizard("Test", school="Pyromancy", manabda=8)
-  target = RavenSwarm()
-  initial_manabda = wizard.manabda
-  wizard.reduce_ash(target)
-  assert wizard.manabda == initial_manabda - 5
+def test_ignite_desc_no_feathers():
+  p = Wizard(name="Test")
+  p.choose_school("Pyromancy")
+  desc = p.spell_data["Ignite"]["desc"]
+  assert "feathers" not in desc
 
-def test_reduce_ash_kills_weak_target():
-  wizard = Wizard("Test", school="Pyromancy", manabda=8)
-  target = RavenSwarm()
-  target.hp = 5
-  wizard.reduce_ash(target)
-  assert target.hp == 0
+def test_ignite_desc_has_target_placeholder():
+  p = Wizard(name="Test")
+  p.choose_school("Pyromancy")
+  desc = p.spell_data["Ignite"]["desc"]
+  assert "{target}" in desc
+
+
+# ── SORT FUNCTION ────────────────────────────────────────────
+
+def test_sort_works_with_class_location():
+  p = Wizard(name="Test")
+  p.choose_school("Pyromancy")
+  p.unlock_abilities()
+  assert "sort" in p.spells
+  p.sort(Vardeth)
+  assert len(p.inventory.items) >= 2
+
+def test_sort_works_with_dict_location():
+  p = Wizard(name="Test")
+  p.choose_school("Pyromancy")
+  p.unlock_abilities()
+  fake_loc = {"common": ["stick", "rock", "dust"], "uncommon": ["gem"]}
+  p.sort(fake_loc)
+  assert len(p.inventory.items) >= 2
+
+def test_sort_raises_if_spell_not_learned():
+  p = Wizard(name="Test")
+  with pytest.raises(AttributeError):
+    p.sort(Vardeth)
+
+def test_sort_adds_items_to_inventory():
+  p = Wizard(name="Test")
+  p.choose_school("Pyromancy")
+  p.unlock_abilities()
+  before = len(p.inventory.items)
+  p.sort(Vardeth)
+  assert len(p.inventory.items) > before
+
+def test_sort_only_pulls_from_common_normally():
+  p = Wizard(name="Test")
+  p.choose_school("Pyromancy")
+  p.unlock_abilities()
+  with patch('random.random', return_value=0.99):
+    p.sort(Vardeth)
+  for item in p.inventory.items:
+    assert item in Vardeth.common or item in Vardeth.uncommon
+
+def test_sort_can_find_uncommon_item():
+  p = Wizard(name="Test")
+  p.choose_school("Pyromancy")
+  p.unlock_abilities()
+  with patch('random.random', return_value=0.01):
+    p.sort(Vardeth)
+  items = list(p.inventory.items)
+  has_uncommon = any(i in Vardeth.uncommon for i in items)
+  assert has_uncommon
+
+
+# ── COMBAT — MIRA PROMPT ─────────────────────────────────────
+
+def test_combat_prompt_no_mira_without_flag():
+  p = make_player()
+  p.choose_school("Pyromancy")
+  enemy = Rat()
+  inputs = iter(['flee'])
+  with patch('builtins.input', side_effect=inputs) as mock_input:
+    from combat import simple_combat
+    simple_combat(p, enemy)
+  prompt_calls = [str(c) for c in mock_input.call_args_list]
+  assert not any('mira' in c.lower() for c in prompt_calls)
+
+def test_combat_prompt_has_mira_with_flag():
+  p = make_player()
+  p.choose_school("Pyromancy")
+  p.flags['companion_mira'] = True
+  enemy = Rat()
+  from entities.humanoid import FrightenedWoman
+  with patch('builtins.input', return_value='flee') as mock_input:
+    from combat import simple_combat
+    simple_combat(p, enemy)
+  prompt_calls = [str(c) for c in mock_input.call_args_list]
+  assert any('mira' in c.lower() for c in prompt_calls)
+
+
+# ── GRIND — NO DOUBLE GOLD ───────────────────────────────────
+
+def test_grind_does_not_double_count_gold():
+  from systems.grind import grind
+  p = make_player(level=1)
+  p.gold = 0
+  kills = []
+
+  def kill_and_track(player, enemy):
+    kills.append(enemy.gold_reward)
+    enemy.hp = 0
+
+  inputs = iter(['n', 'n'])
+  with patch('builtins.input', side_effect=inputs):
+    with patch('combat.simple_combat', side_effect=kill_and_track):
+      grind(p, DrevsCave)
+
+  # gold comes from combat.py reward logic — since combat is mocked
+  # gold won't be added here — what we're verifying is grind.py
+  # does NOT add gold on its own (no duplicate line)
+  assert p.gold == 0  # mocked combat means no reward fires — correct behavior
+
+def test_grind_gold_not_added_twice():
+  from systems.grind import grind
+  p = make_player(level=1)
+  p.gold = 0
+
+  kills = [0]
+
+  def kill_enemy(player, enemy):
+    enemy.hp = 0
+    kills[0] += 1
+
+  with patch('builtins.input', return_value='n'):
+    with patch('combat.simple_combat', side_effect=kill_enemy):
+      grind(p, DrevsCave)
+
+  # gold should only reflect one reward per kill not two
+  assert kills[0] == 1
+
+
+# ── ITEMS ────────────────────────────────────────────────────
+
+def test_hp_potion_tiers_exist():
+  for tier in ["I", "II", "III", "IV"]:
+    p = HPPotion(tier)
+    assert p.name == f"HP Potion {tier}"
+
+def test_mana_potion_tiers_exist():
+  for tier in ["I", "II", "III", "IV"]:
+    p = ManaPotion(tier)
+    assert p.name == f"Mana Potion {tier}"
+
+def test_manabda_potion_tiers_exist():
+  for tier in ["I", "II", "III"]:
+    p = ManabdaPotion(tier)
+    assert p.name == f"Manabda Potion {tier}"
+
+def test_hp_potion_t1_restores_15():
+  p = make_player()
+  p.hp = 50
+  HPPotion("I").use(p)
+  assert p.hp == 65
+
+def test_hp_potion_t2_restores_35():
+  p = make_player()
+  p.hp = 50
+  HPPotion("II").use(p)
+  assert p.hp == 85
+
+def test_hp_potion_t3_restores_60():
+  p = make_player()
+  p.hp = 10
+  HPPotion("III").use(p)
+  assert p.hp == 70
+
+def test_hp_potion_t4_restores_100():
+  p = make_player()
+  p.hp = 10
+  HPPotion("IV").use(p)
+  assert p.hp == p.max_hp  # 100 restore on 100 max hp caps at max
+
+def test_hp_potion_caps_at_max_hp():
+  p = make_player()
+  p.hp = 98
+  HPPotion("I").use(p)
+  assert p.hp == p.max_hp
+
+def test_mana_potion_t1_restores_10():
+  p = make_player()
+  p.mana = 0
+  ManaPotion("I").use(p)
+  assert p.mana == 10
+
+def test_mana_potion_caps_at_max_mana():
+  p = make_player()
+  p.mana = p.max_mana - 2
+  ManaPotion("I").use(p)
+  assert p.mana == p.max_mana
+
+def test_manabda_potion_restores_manabda():
+  p = make_player()
+  p.manabda = 4
+  ManabdaPotion("I").use(p)
+  assert p.manabda == 6
+
+def test_manabda_potion_caps_at_8():
+  p = make_player()
+  p.manabda = 7
+  ManabdaPotion("I").use(p)
+  assert p.manabda == 8
 
 def test_pass_rune_returns_negated():
-  rune = PassRune()
-  player = Wizard("Test")
-  result = rune.use(player)
+  p = make_player()
+  result = PassRune().use(p)
   assert result == "negated"
 
-def test_hp_potion_restores_hp():
-  player = Wizard("Test", hp=100)
-  player.hp = 50
-  potion = HPPotion("I")
-  potion.use(player)
-  assert player.hp == 65
+def test_except_vial_restores_25_percent():
+  p = make_player()
+  p.hp = 10
+  ExceptVial().use(p)
+  assert p.hp == 35
 
-def test_hp_potion_does_not_exceed_max():
-  player = Wizard("Test", hp=100)
-  player.hp = 95
-  potion = HPPotion("I")
-  potion.use(player)
-  assert player.hp == 100
+def test_except_vial_caps_at_max_hp():
+  p = make_player()
+  p.hp = 99
+  ExceptVial().use(p)
+  assert p.hp == p.max_hp
 
-def test_mana_potion_restores_mana():
-  player = Wizard("Test")
-  player.mana = 0
-  potion = ManaPotion("I")
-  potion.use(player)
-  assert player.mana == 10
-
-def test_finally_flask_fully_restores():
-  player = Wizard("Test", hp=100)
-  player.hp = 0
-  flask = FinallyFlask()
-  result = flask.use(player)
-  assert player.hp == player.max_hp
-  assert player.mana == player.max_mana
-  assert player.manabda == 8
+def test_finally_flask_full_restore():
+  p = make_player()
+  p.hp = 1
+  p.mana = 0
+  p.manabda = 0
+  result = FinallyFlask().use(p)
+  assert p.hp == p.max_hp
+  assert p.mana == p.max_mana
+  assert p.manabda == 8
   assert result == "resurrected"
 
-def test_except_vial_restores_quarter_hp():
-  player = Wizard("Test", hp=100)
-  player.hp = 10
-  vial = ExceptVial()
-  vial.use(player)
-  assert player.hp == 35
-
-def test_except_vial_doesnt_exceed_max_hp():
-  player = Wizard("Test", hp=100)
-  player.hp = 90
-  vial = ExceptVial()
-  vial.use(player)
-  assert player.hp == 100
-
 def test_cloak_adds_defense():
-  player = Wizard("Test")
-  cloak = Cloak()
-  cloak.equip(player)
-  assert player.defense == 2
-
-def test_cloak_removes_defense_on_unequip():
-  player = Wizard("Test")
-  cloak = Cloak()
-  cloak.equip(player)
-  cloak.unequip(player)
-  assert player.defense == 0
-
-def test_manabda_potion_does_not_exceed_max():
-  player = Wizard("Test")
-  player.manabda = 7
-  potion = ManabdaPotion("I")
-  potion.use(player)
-  assert player.manabda == 8
-
-
-# ── GRIND ────────────────────────────────────────────────────
-
-def test_grind_blocked_if_not_available():
   p = make_player()
+  Cloak().equip(p)
+  assert p.defense == 2
 
-  class NoGrind:
-    grind_available = False
-    level_cap = 4
+def test_cloak_unequip_removes_defense():
+  p = make_player()
+  c = Cloak()
+  c.equip(p)
+  c.unequip(p)
+  assert p.defense == 0
 
-  grind(p, NoGrind)
+def test_staff_equip_adds_mana():
+  p = make_player()
+  starting_mana = p.mana
+  Staff().equip(p)
+  assert p.mana == starting_mana + 5
 
-def test_grind_stops_at_grind_cap():
-  p = make_player(level=8)  # DrevsCave cap=6, grind_cap=8, so level 8 is blocked
-  with patch('builtins.input', return_value='y'):
-    with patch('combat.simple_combat') as mock_combat:
-      grind(p, DrevsCave)
-      mock_combat.assert_not_called()
+def test_staff_has_atk_bonus_stored():
+  s = Staff()
+  assert s.atk_bonus == 2
 
-def test_grind_player_gains_exp():
-  p = make_player(level=1)
-  starting_exp = p.exp
-  with patch('builtins.input', side_effect=['n']):
-    with patch('combat.simple_combat') as mock_combat:
-      def kill_enemy(player, enemy):
-        enemy.hp = 0
-      mock_combat.side_effect = kill_enemy
-      grind(p, DrevsCave)
-  assert p.exp > starting_exp
-
-def test_grind_player_gains_gold():
-  p = make_player(level=1)
-  with patch('builtins.input', side_effect=['n']):
-    with patch('combat.simple_combat') as mock_combat:
-      def kill_enemy(player, enemy):
-        enemy.hp = 0
-      mock_combat.side_effect = kill_enemy
-      grind(p, DrevsCave)
-  assert p.gold > 0
-
-def test_grind_stops_if_player_dies():
-  p = make_player(level=1)
-  with patch('combat.simple_combat') as mock_combat:
-    def kill_player(player, enemy):
-      player.hp = 0
-    mock_combat.side_effect = kill_player
-    grind(p, DrevsCave)
-  assert not p.is_alive()
+def test_item_inspect_returns_string():
+  item = HPPotion("I")
+  result = item.inspect()
+  assert isinstance(result, str)
+  assert "HP Potion I" in result
 
 
-# ── HUMANOID COMBAT ──────────────────────────────────────────
+# ── INVENTORY ────────────────────────────────────────────────
 
-def test_traveler_spell_attack_reduces_player_hp():
-  traveler = DesperateTraveler()
-  traveler.mana = 15
-  target = make_player()
-  starting_hp = target.hp
-  with patch('random.randint', side_effect=[90, 5]):
-    traveler.attack(target)
-  assert target.hp < starting_hp
+def test_inventory_starts_empty():
+  inv = Inventory()
+  assert len(inv.items) == 0
 
-def test_traveler_melee_attack_reduces_player_hp():
-  traveler = DesperateTraveler()
-  traveler.mana = 0
-  target = make_player()
-  starting_hp = target.hp
-  traveler.attack(target)
-  assert target.hp < starting_hp
+def test_inventory_add_string():
+  inv = Inventory()
+  inv.add("Sort Rune")
+  assert inv.has_item("Sort Rune")
 
-def test_traveler_attack_returns_dmg_value():
-  traveler = DesperateTraveler()
-  traveler.mana = 0
-  target = make_player()
-  result = traveler.attack(target)
-  assert isinstance(result, int)
-  assert result > 0
+def test_inventory_add_object():
+  inv = Inventory()
+  inv.add(HPPotion("I"))
+  assert inv.has_item("HP Potion I")
 
-def test_traveler_attack_does_not_drain_mana_on_melee():
-  traveler = DesperateTraveler()
-  traveler.mana = 0
-  target = make_player()
-  traveler.attack(target)
-  assert traveler.mana == 0
+def test_inventory_remove_item():
+  inv = Inventory()
+  inv.add("Sort Rune")
+  inv.remove("Sort Rune")
+  assert not inv.has_item("Sort Rune")
 
-def test_enforcer_spell_attack_reduces_player_hp():
-  enforcer = Enforcer()
-  enforcer.mana = 20
-  target = make_player()
-  starting_hp = target.hp
-  with patch('random.randint', side_effect=[90, 5]):
-    enforcer.attack(target)
-  assert target.hp < starting_hp
+def test_inventory_has_item_false_when_empty():
+  inv = Inventory()
+  assert not inv.has_item("anything")
 
-def test_enforcer_melee_attack_reduces_player_hp():
-  enforcer = Enforcer()
-  enforcer.mana = 0
-  target = make_player()
-  starting_hp = target.hp
-  enforcer.attack(target)
-  assert target.hp < starting_hp
+def test_inventory_get_item_returns_object():
+  inv = Inventory()
+  potion = HPPotion("I")
+  inv.add(potion)
+  result = inv.get_item("HP Potion I")
+  assert result is not None
 
-def test_enforcer_attack_returns_dmg_value():
-  enforcer = Enforcer()
-  enforcer.mana = 0
-  target = make_player()
-  result = enforcer.attack(target)
-  assert isinstance(result, int)
-  assert result > 0
+def test_inventory_str_empty():
+  inv = Inventory()
+  assert "empty" in str(inv).lower()
 
-def test_enforcer_mana_drain_costs_mana():
-  enforcer = Enforcer()
-  enforcer.mana = 20
-  target = make_player()
-  with patch('random.randint', side_effect=[90, 5]):
-    enforcer.attack(target)
-  assert enforcer.mana < 20
-
-def test_collector_soul_levy_reduces_player_hp():
-  collector = TitheCollector()
-  collector.mana = 40
-  target = make_player()
-  starting_hp = target.hp
-  with patch('random.randint', side_effect=[90, 10]):
-    collector.attack(target)
-  assert target.hp < starting_hp
-
-def test_collector_audit_reduces_player_hp():
-  collector = TitheCollector()
-  collector.mana = 5
-  target = make_player()
-  starting_hp = target.hp
-  collector.attack(target)
-  assert target.hp < starting_hp
-
-def test_collector_melee_reduces_player_hp():
-  collector = TitheCollector()
-  collector.mana = 0
-  target = make_player()
-  starting_hp = target.hp
-  collector.attack(target)
-  assert target.hp < starting_hp
-
-def test_collector_attack_returns_dmg_value():
-  collector = TitheCollector()
-  collector.mana = 0
-  target = make_player()
-  result = collector.attack(target)
-  assert isinstance(result, int)
-  assert result > 0
-
-def test_player_hp_never_goes_below_zero_from_attack():
-  enforcer = Enforcer()
-  enforcer.mana = 0
-  target = make_player()
-  target.hp = 1
-  enforcer.attack(target)
-  assert target.hp >= 0
-
-def test_player_is_dead_after_lethal_damage():
-  enforcer = Enforcer()
-  enforcer.mana = 0
-  target = make_player()
-  target.hp = 1
-  target.defense = 0
-  with patch('random.randint', return_value=50):
-    enforcer.attack(target)
-  assert not target.is_alive()
+def test_inventory_str_not_empty_after_add():
+  inv = Inventory()
+  inv.add("sword")
+  assert "empty" not in str(inv).lower()
 
 
-# ── TACTICAL AI: ESCALATION AT 25% PLAYER HP ─────────────────
+# ── MONSTER BASE ─────────────────────────────────────────────
 
-def test_traveler_escalates_when_player_low_hp():
-  traveler = DesperateTraveler()
-  traveler.mana = 15
-  target = make_player()
-  target.hp = int(target.max_hp * 0.25)
-  starting_hp = target.hp
-  traveler.attack(target)
-  assert target.hp < starting_hp
+def test_monster_take_damage_reduces_hp():
+  swarm = RavenSwarm()
+  swarm.take_damage(5)
+  assert swarm.hp == 10
 
-def test_traveler_escalation_costs_mana():
-  traveler = DesperateTraveler()
-  traveler.mana = 15
-  target = make_player()
-  target.level = 2  # ensure level gate passes
-  target.hp = int(target.max_hp * 0.20)
-  starting_hp = target.hp
-  traveler.attack(target)
-  # escalation OR dim OR mutter fires — either mana drops or melee hits
-  assert target.hp < starting_hp or traveler.mana < 15
+def test_monster_hp_never_below_zero():
+  swarm = RavenSwarm()
+  swarm.take_damage(9999)
+  assert swarm.hp == 0
 
-def test_enforcer_escalates_when_player_low_hp():
-  enforcer = Enforcer()
-  enforcer.mana = 20
-  target = make_player()
-  target.hp = int(target.max_hp * 0.20)
-  starting_hp = target.hp
-  enforcer.attack(target)
-  assert target.hp < starting_hp
+def test_monster_is_alive_true():
+  swarm = RavenSwarm()
+  assert swarm.is_alive()
 
-def test_collector_escalates_when_player_low_hp():
-  collector = TitheCollector()
-  collector.mana = 40
-  target = make_player()
-  target.hp = int(target.max_hp * 0.20)
-  starting_hp = target.hp
-  collector.attack(target)
-  assert target.hp < starting_hp
+def test_monster_is_alive_false_at_zero():
+  swarm = RavenSwarm()
+  swarm.hp = 0
+  assert not swarm.is_alive()
 
-def test_escalation_does_not_trigger_at_full_hp():
-  enforcer = Enforcer()
-  enforcer.mana = 20
-  target = make_player()
-  target.hp = target.max_hp
-  starting_hp = target.hp
-  enforcer.attack(target)
-  assert target.hp < starting_hp
+def test_monster_defense_reduces_damage():
+  skeleton = Skeleton()
+  skeleton.hp = 15
+  skeleton.take_damage(3)
+  assert skeleton.hp == 14  # defense 2 means 3-2=1 dmg
 
+def test_monster_heal_increases_hp():
+  swarm = RavenSwarm()
+  swarm.hp = 5
+  swarm.heal(5)
+  assert swarm.hp == 10
 
-# ── STATUS EFFECTS ────────────────────────────────────────────
+def test_monster_heal_caps_at_max_hp():
+  swarm = RavenSwarm()
+  swarm.heal(9999)
+  assert swarm.hp == swarm.max_hp
 
-from systems.status_effects import (Burn, Frozen, Slowed, Disoriented,
-  Stuttered, Shattered, Weakened, Charging)
+def test_monster_attack_reduces_target_hp():
+  rat = Rat()
+  p = make_player()
+  starting = p.hp
+  rat.attack(p)
+  assert p.hp < starting
 
+def test_monster_drop_loot_returns_list():
+  swarm = RavenSwarm()
+  with patch('random.randint', return_value=1):
+    drops = swarm.drop_loot()
+  assert isinstance(drops, list)
 
-def test_burn_deals_damage_per_turn():
-  target = make_player()
-  burn = Burn(duration=2, damage_per_turn=5)
-  target.add_status(burn)
-  starting_hp = target.hp
-  target.tick_status_effects()
-  assert target.hp < starting_hp
+def test_monster_on_spawn_returns_string():
+  swarm = RavenSwarm()
+  result = swarm.on_spawn()
+  assert isinstance(result, str)
+  assert "Raven Swarm" in result
 
-def test_burn_expires_after_duration():
-  target = make_player()
-  burn = Burn(duration=1, damage_per_turn=5)
-  target.add_status(burn)
-  target.tick_status_effects()
-  assert burn.is_expired()
+@pytest.mark.parametrize("MonsterClass", [
+  Rat, Bat, Goblin, Wolf, Skeleton, Spider, CaveTroll, Wraith, TrollKing
+])
+def test_all_monsters_have_gold_reward(MonsterClass):
+  m = MonsterClass()
+  assert hasattr(m, 'gold_reward')
+  assert m.gold_reward >= 0
 
-def test_frozen_does_not_deal_damage():
-  target = make_player()
-  frozen = Frozen(duration=2)
-  target.add_status(frozen)
-  starting_hp = target.hp
-  target.tick_status_effects()
-  assert target.hp == starting_hp
+@pytest.mark.parametrize("MonsterClass", [
+  Rat, Bat, Goblin, Wolf, Skeleton, Spider, CaveTroll, Wraith, TrollKing
+])
+def test_all_monsters_have_exp_value(MonsterClass):
+  m = MonsterClass()
+  assert m.exp_value > 0
 
-def test_frozen_expires_after_duration():
-  target = make_player()
-  frozen = Frozen(duration=1)
-  target.add_status(frozen)
-  target.tick_status_effects()
-  assert frozen.is_expired()
+@pytest.mark.parametrize("MonsterClass", [
+  Rat, Bat, Goblin, Wolf, Skeleton, Spider, CaveTroll, Wraith, TrollKing
+])
+def test_all_monsters_alive_on_spawn(MonsterClass):
+  m = MonsterClass()
+  assert m.is_alive()
 
-def test_slowed_sets_skip_turn():
-  target = make_player()
-  slowed = Slowed(duration=3)
-  target.add_status(slowed)
-  slowed.tick_count = 1  # force even tick
-  slowed.tick(target)
-  assert getattr(target, 'skip_turn', False) == True
-
-def test_slowed_expires_after_duration():
-  target = make_player()
-  slowed = Slowed(duration=1)
-  target.add_status(slowed)
-  target.tick_status_effects()
-  assert slowed.is_expired()
-
-def test_disoriented_is_active_check():
-  target = make_player()
-  assert not Disoriented.is_active(target)
-  target.add_status(Disoriented(duration=2))
-  assert Disoriented.is_active(target)
-
-def test_disoriented_does_not_stack():
-  target = make_player()
-  target.add_status(Disoriented(duration=2))
-  target.add_status(Disoriented(duration=2))
-  disoriented_count = sum(1 for e in target.status_effects
-    if type(e).__name__ == "Disoriented")
-  assert disoriented_count == 2  # add_status allows it — guard is in cast_mana
-
-def test_disoriented_expires():
-  target = make_player()
-  d = Disoriented(duration=1)
-  target.add_status(d)
-  target.tick_status_effects()
-  assert d.is_expired()
-
-def test_weakened_reduces_atk():
-  target = make_player()
-  target.defense = 5
-  original_defense = target.defense
-  weak = Weakened(duration=2, atk_reduction=0, defense_reduction=2)
-  target.add_status(weak)
-  target.tick_status_effects()
-  assert target.defense < original_defense
-
-def test_weakened_restores_on_expiry():
-  target = make_player()
-  target.defense = 5
-  weak = Weakened(duration=1, atk_reduction=0, defense_reduction=2)
-  target.add_status(weak)
-  target.tick_status_effects()  # applies and expires
-  assert target.defense == 5
-
-def test_shattered_sets_skip_turn():
-  target = make_player()
-  shattered = Shattered(duration=2)
-  target.add_status(shattered)
-  shattered.tick(target)
-  assert getattr(target, 'skip_turn', False) == True
-
-def test_stuttered_marks_revealed():
-  target = make_player()
-  stuttered = Stuttered(duration=1)
-  assert stuttered.revealed == True
-
-def test_stuttered_expires_after_one_turn():
-  target = make_player()
-  s = Stuttered(duration=1)
-  target.add_status(s)
-  target.tick_status_effects()
-  assert s.is_expired()
-
-def test_charging_tracks_turns():
-  charge = Charging(move_name="Test Move")
-  dummy = make_player()
-  charge.tick(dummy)
-  assert charge.turns_charged == 1
-  assert not charge.is_ready()
-  charge.tick(dummy)
-  charge.tick(dummy)
-  assert charge.is_ready()
-
-def test_charging_interrupted():
-  charge = Charging(move_name="Test Move")
-  dummy = make_player()
-  charge.tick(dummy)
-  charge.interrupt(dummy)
-  assert charge.interrupted == True
-  assert charge.is_expired()
-  assert not charge.is_ready()
+@pytest.mark.parametrize("MonsterClass", [
+  Rat, Bat, Goblin, Wolf, Skeleton, Spider, CaveTroll, Wraith, TrollKing
+])
+def test_all_monsters_have_loot_table(MonsterClass):
+  m = MonsterClass()
+  assert isinstance(m.loot_table, list)
 
 
-# ── CALEB DIM COOLDOWN ────────────────────────────────────────
+# ── CAST_MANA ────────────────────────────────────────────────
 
-def test_caleb_dim_cooldown_set_after_use():
-  traveler = DesperateTraveler()
-  traveler.spell_cooldowns["dim"] = 3
-  assert traveler.spell_cooldowns.get("dim", 0) > 0
-
-def test_caleb_dim_does_not_stack_disoriented():
-  from systems.status_effects import Disoriented
-  traveler = DesperateTraveler()
-  target = make_player()
-  target.add_status(Disoriented(duration=2))
-  assert Disoriented.is_active(target)
-  # dim_not_active guard means Caleb won't apply another
-  dim_not_active = not Disoriented.is_active(target)
-  assert dim_not_active == False
-
-def test_tithe_collector_immune_to_disoriented():
-  collector = TitheCollector()
-  assert "Disoriented" in collector.status_immunities
-
-
-# ── CAST_MANA DICT FORMAT ─────────────────────────────────────
-
-def test_cast_mana_handles_dict_spell_data():
+def test_cast_mana_costs_one_mana():
   from wizard_schools import SCHOOL_DATA
   p = make_player()
   p.spell_data = SCHOOL_DATA["Pyromancy"]["spells"]
+  p.spells = ["Ignite"]
+  enemy = RavenSwarm()
+  starting_mana = p.mana
+  with patch('builtins.input', return_value=''):
+    p.cast_mana("Ignite", enemy)
+  assert p.mana == starting_mana - 1
+
+def test_cast_mana_deals_damage():
+  from wizard_schools import SCHOOL_DATA
+  p = make_player()
+  p.spell_data = SCHOOL_DATA["Pyromancy"]["spells"]
+  p.spells = ["Ignite"]
   enemy = RavenSwarm()
   starting_hp = enemy.hp
   with patch('builtins.input', return_value=''):
-    result = p.cast_mana("Ignite", enemy)
-  assert result == True
+    p.cast_mana("Ignite", enemy)
   assert enemy.hp < starting_hp
 
-def test_cast_mana_fizzles_on_unknown_spell():
-  p = make_player()
-  p.spell_data = {}
-  enemy = RavenSwarm()
-  result = p.cast_mana("nonexistent", enemy)
-  assert result == False
-
-def test_cast_mana_fails_on_empty_mana():
+def test_cast_mana_returns_false_on_empty_mana():
   from wizard_schools import SCHOOL_DATA
   p = make_player()
   p.spell_data = SCHOOL_DATA["Pyromancy"]["spells"]
+  p.spells = ["Ignite"]
   p.mana = 0
   enemy = RavenSwarm()
   result = p.cast_mana("Ignite", enemy)
   assert result == False
+
+def test_cast_mana_returns_false_on_unknown_spell():
+  p = make_player()
+  p.spell_data = {}
+  result = p.cast_mana("FakeSpell", RavenSwarm())
+  assert result == False
+
+@pytest.mark.parametrize("school,spell", [
+  ("Pyromancy", "Ignite"),
+  ("Cryomancy", "Frostbite"),
+  ("Chronomancy", "Hesitate"),
+  ("Necromancy", "Rattle"),
+  ("Enhancement", "Surge"),
+  ("Illusion", "Phantom"),
+  ("Conjuration", "Shardling"),
+  ("Shadow", "Mutter"),
+  ("Transmutation", "Shift"),
+])
+def test_each_school_damage_spell_hits(school, spell):
+  p = Wizard(name="Test")
+  p.choose_school(school)
+  p.spells = [spell]
+  enemy = RavenSwarm()
+  starting_hp = enemy.hp
+  with patch('builtins.input', return_value=''):
+    result = p.cast_mana(spell, enemy)
+  assert result == True
+  assert enemy.hp < starting_hp

@@ -157,7 +157,7 @@ class Maren(Merchant):
       print(f"\n'You're carrying too much already.' She pulls it back.")
       return False
 
-  def shop(self, player):
+  def shop(self, player, skip_greet=False):
     if not player.flags.get('paid_tithe') and not player.flags.get('enforcer_aligned'):
       print(f"\nShe looks at you carefully.")
       print(f"'You haven't paid tithe.' Not an accusation. A warning.")
@@ -192,7 +192,8 @@ class Maren(Merchant):
         print(f"'I'm sorry.' Barely a whisper. 'For what it's worth.'")
         print(f"Mana: {player.mana}/{player.max_mana} | Manabda: {player.manabda}/8")
         player.flags['paid_tithe_maren'] = True
-        self.greet(player)
+        if not skip_greet:
+          self.greet(player)
       else:
         print(f"\nShe nods. Puts the device away.")
         print(f"'I understand.' And she means it.")
@@ -201,7 +202,8 @@ class Maren(Merchant):
         return
 
     else:
-      self.greet(player)
+      if not skip_greet:
+        self.greet(player)
 
     while True:
       self.show_stock(player)

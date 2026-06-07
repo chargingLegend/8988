@@ -132,7 +132,7 @@ class RavenSwarm(Monster):
   def __init__(self):
     super().__init__(name="Raven Swarm", hp=15,
                      desc="Not birds. Too many eyes. Too much hunger.",
-                     exp_value=50, level=2, atk=4, defense=0, gold_reward=5,
+                     exp_value=50, level=2, atk=4, defense=0, gold_reward=15,
                      loot_table=[("Black Feather", 60), ("Crow's Eye", 10)],
                      abilities=["Swarm", "Peck Barrage"])
     self.attack_dmg = (3, 10)

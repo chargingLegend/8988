@@ -293,7 +293,7 @@ if __name__ == "__main__":
   player = Wizard(name=player_name)
   player.flags = {}
   player.gold = 0
-  player.morality = 0  # 0-3 neutral | 4-7 shady | 8+ dark
+  player.corruption = 0  # 0 = clean | 1-3 = shady | 4-7 = dark | 8+ = corrupted
 
   print(f"\nThe terminal pulses once. Accepts it.")
   print(f"Somewhere, something was written down.")
@@ -323,12 +323,25 @@ if __name__ == "__main__":
   print(f"\nMana: {player.mana}/{player.max_mana} | Manabda: {player.manabda}/8")
 
   print("\nThe silence after is absolute.")
-  print("Then — footsteps.")
+  print("\nThen — that sensation again.")
+  print("Not sound. Something behind sound.")
+  print("The same place it came from before.")
+  print("Behind your sternum. Low. Certain.")
+  print("\n'He's here.'")
+  print("\nThen — footsteps.")
   print("From nowhere. From everywhere.")
   print("\nAn older wizard stands where none stood before.")
   print("He did not walk in. He simply is.")
-  print("He looks at you the way a man looks at a tool he isn't sure will hold.")
-  print("Then he nods. Once. Barely.")
+  print("\nHe looks at you.")
+  print("Not the way someone looks at a person.")
+  print("The way someone looks at a thing they've already assessed")
+  print("and found to be less than they hoped for.")
+  print("A long moment passes.")
+  print("He says nothing.")
+  print("Whatever question he asked himself, you weren't consulted.")
+  print("Whatever answer he arrived at, it doesn't seem to impress him.")
+  print("\nSomething about it sits wrong.")
+  print("You don't know why. You file it away.")
   print("\nFrom his robe he draws a ledger.")
   print("Bound in obsidian. It opens without being opened.")
   print("Something is written. You don't see what.")
@@ -352,14 +365,15 @@ if __name__ == "__main__":
     print("Like he was never coming with you.")
     print("Like this was always going to be yours alone.")
   else:
-    print(f"\nYou stay. Let the door fall shut.")
-    print("'I care not where the old man goes.'")
-    print("'My Path has just begun. His part in it is done.'")
+    print(f"\nYou let the door fall shut.")
+    print("You don't move after him.")
+    print("He didn't ask you to. He didn't ask you anything.")
+    print("That lands somewhere it shouldn't.")
     print("\nA moment passes. Then another.")
     print("You shove the door open yourself.")
     print("You expect to find him waiting. Watching.")
     print("There is nothing.")
-    print("Just the mountain. Just the dark.")
+    print("Just the slope. Just the dark.")
     print("The world didn't notice you took your time.")
     print("It just continued without you.")
     print("Somehow that is worse.")
@@ -392,11 +406,12 @@ if __name__ == "__main__":
   print("Too hungry.")
   print("They descend.")
 
-  print("\nThree paths burn in your mind:")
+  print("\nThree paths present themselves:")
   print("1: Move toward the figures. Whatever comes, comes.")
-  print("2: Watch. Do not help. The mountain doesn't ask you to.")
+  print("2: You observe the ordeal for a moment or two. You aren't moved to help.")
+  print("   This isn't what is required to conquer the Path.")
   print("3: Descend. The town calls louder than strangers do.")
-  choice_2 = input("\nThe Path demands choice. Not comfort. [1/2/3]: ")
+  choice_2 = input("\nChoose [1/2/3]: ")
 
   if choice_2 == "1":
     print("\nYou move toward them.")
@@ -423,22 +438,27 @@ if __name__ == "__main__":
       print("With suspicion sharp enough to cut.")
       print("'You.' His voice is controlled. Careful.")
       print("'Pathwalker.' Not a greeting. An identification.")
-      print("'What do you want for it.'")
+      print("He glances at the dispersing swarm. Back at you.")
+      print("'What do you want for that.'")
+      print("Not a thank you. A negotiation opening.")
 
-      print("\n[1: 'Nothing. I just killed a swarm for you.']")
+      print("\n[1: 'Are you joking? I just saved your hides from becoming dinner!']")
       print("[2: 'What is this place? What are you running from?']")
       print("[3: 'Easy. I'm not your enemy.']")
       print("[4: Say nothing.]")
       choice_3 = input("\nYour response: ")
 
       if choice_3 == "1":
-        print("\nHe studies you. Looking for the angle.")
-        print("'Nobody does nothing for nothing out here.'")
+        print("\nHe studies you. The suspicion doesn't leave his face.")
+        print("If anything, it settles deeper.")
+        print("A long pause before he speaks.")
+        print("'Convenient timing.' Flat. Unimpressed.")
+        print("'People out here don't just happen to show up.'")
         print(f"His eyes drop to your hands. To the mark.")
-        print(f"'{player.school}.' He says it like he's filing it away.")
-        print("'Either way. The town down there doesn't care what you chose.'")
+        print(f"'{player.school}.' He says it like he's cataloguing evidence.")
+        print("'Either way. The town down there doesn't care what you just did.'")
         print("'They'll take from you same as anyone.'")
-        player.flags['traveler_hostile'] = True
+        player.flags['traveler_wary'] = True
 
       elif choice_3 == "2":
         print("\nHe laughs. No humor in it.")
@@ -454,7 +474,7 @@ if __name__ == "__main__":
 
       elif choice_3 == "3":
         print("\nYou raise empty hands.")
-        print("'I just pulled a swarm off you. I'm not your enemy.'")
+        print("'Easy. I'm not your enemy.'")
         print("\nHe watches you for a long moment.")
         print("The hair doesn't move. But his shoulders drop a fraction.")
         print("Something recalculates behind his eyes.")
@@ -465,7 +485,7 @@ if __name__ == "__main__":
         print("but is in the same neighborhood.")
         print("'Thank you.' Just that. But she means all of it.")
 
-        print("\n[1: 'You mentioned Tithe. What's happening down there?']")
+        print("\n[1: 'You said Tithe. What's happening down there?']")
         print("[2: 'That bell. We should move.']")
         print("[3: 'What do I call you?']")
         choice_4 = input("\nChoose: ")
@@ -478,9 +498,21 @@ if __name__ == "__main__":
           print("'They take mana. Manabda. Blood if they want it.'")
           print("'Call it Tithe. Dress it up however helps you sleep.'")
           print("The woman's voice, barely audible:")
-          print("'They took my sister. Said she had... potential.'")
-          print("She doesn't say what happened after that.")
-          print("She doesn't have to.")
+          print("'My sister came here not long ago.'")
+          print("'She's... she was always like that. Certain of herself.'")
+          print("'A prodigy, people said. She believed them.'")
+          print("A pause.")
+          print("He's very still.")
+          print("'Caleb told me she was already here. Already making a name.'")
+          print("'Said if she could do it, imagine what we could do together.'")
+          print("She doesn't look at him.")
+          print("'She was talking to the wrong people about the wrong things.'")
+          print("'Enforcers were already watching her.'")
+          print("'One morning we went to her room at the inn.'")
+          print("'The door had been... it was off the hinges.'")
+          print("A long silence.")
+          print("'We don't know. We just don't know.'")
+          player.flags['mira_sister_known'] = True
 
         elif choice_4 == "2":
           print("\nHe nods. Once. Sharp.")
@@ -494,10 +526,23 @@ if __name__ == "__main__":
           print("\nHe tenses immediately.")
           print("'Names are currency here.'")
           print("'You earn them. Or you take them. Nobody gives them.'")
-          print("The woman touches his arm gently.")
-          print("He exhales.")
-          print("'Survive the town. Then we'll talk.'")
-          print("It's the closest thing to trust he knows how to offer.")
+          if player.flags.get('traveler_wary') and player.flags.get('mira_sister_known'):
+            print("\nThe woman touches his arm gently.")
+            print("He exhales.")
+            print("Something passes across his face.")
+            print("Not trust. Not yet.")
+            print("But the door isn't all the way shut.")
+            print("'...Caleb.' He says it like it costs him.")
+            print("'That's her name.' He nods toward the woman.")
+            print("'Mira.'")
+            print("He looks at you for a long moment.")
+            print("'Her sister is somewhere in this town.'")
+            print("'That's all you're getting.'")
+          else:
+            print("The woman touches his arm gently.")
+            print("He exhales.")
+            print("'Survive the town. Then we'll talk.'")
+            print("It's the closest thing to trust he knows how to offer.")
 
         print("\nHe reaches into his coat.")
         print("Hesitates. Then pulls something out.")
@@ -545,7 +590,7 @@ if __name__ == "__main__":
       else:
         print("\n[1: 'Tell me more about this Tithe.']")
         print("[2: 'I'll handle the Enforcers.']")
-        print("[3: 'You called me a thief. Prove you deserve defending.']")
+        print("[3: 'You don't know me. Don't assume what I'm after.']")
         print("[4: 'Not my problem.' Turn away.]")
 
       choice_5 = input("\nThe bell rings again. Choose: ")
@@ -566,10 +611,10 @@ if __name__ == "__main__":
           print("\n'That's...' He stops.")
           print("Looks at you properly for the first time.")
           print("'Don't die for us, Pathwalker.'")
-          print("'The world needs fewer corpses and more people")
-          print("who make choices like that.'")
           print("He pulls her into the dark. They're gone quickly.")
-          print("You turn toward the slope alone.")
+          print("The slope above Vardeth is outside Enforcer jurisdiction.")
+          print("Up here they're safe enough.")
+          print("You turn toward the town alone.")
           player.flags['travelers_saved'] = True
           player.flags['traveler_owes_life_debt'] = True
 
@@ -583,10 +628,6 @@ if __name__ == "__main__":
           print("No fight. Just the sound of two people")
           print("who trusted wrong.")
           print("That's somehow the worst sound of all.")
-          if player.inventory.has_item("Sort Rune"):
-            player.inventory.remove("Sort Rune")
-            print("\nThe rune goes cold in your pack. Then vanishes.")
-            print("Like it agreed with him.")
           player.flags['traveler_betrayed'] = True
 
       else:
@@ -596,8 +637,17 @@ if __name__ == "__main__":
           print("'They extract from Pathwalkers. Everything they can reach.'")
           print("'Mana. Manabda. Sometimes more.'")
           print("The woman's voice breaks once. Just once.")
-          print("'They took my sister. Said she had potential.'")
+          print("'My sister was here before us.'")
+          print("'She's a prodigy. Always knew it. Never stopped saying it.'")
+          print("'Caleb told me she was already making headway.'")
+          print("'Said it was a sign.'")
+          print("She stops.")
+          print("He's looking at the town. Not at her.")
+          print("'She was talking to the wrong people.'")
+          print("'One morning. Door off its hinges.'")
+          print("'That's all we have.'")
           print("Silence sits on all three of you.")
+          player.flags['mira_sister_known'] = True
           print("\nHe exhales. Reaches into his coat.")
           print("'You didn't have to stop. You did anyway.'")
           print("He holds out the carved stone.")
@@ -613,15 +663,15 @@ if __name__ == "__main__":
           print("The bell swallows his words.")
           print("The slope takes you.")
           player.flags['travelers_ignored'] = True
-          player.morality += 1  # minor — indifference to someone in need
+          player.corruption += 1  # minor — indifference to someone in need
 
         elif choice_5 == "3":
           print("\nYou step toward him.")
-          print("'You called me a thief after I pulled that swarm off you.'")
+          print("'You don't know me.'")
           print("His eyes go flat. Something decides itself behind them.")
-          print("'Fine.' He draws the blade.")
-          print("'Everything out here gets taken.")
-          print("Might as well be you doing the taking.'")
+          print("'No.' He draws the blade.")
+          print("'But I know what everything out here gets taken for.'")
+          print("'Might as well be me doing the taking.'")
           traveler = DesperateTraveler()
           simple_combat(player, traveler)
           if player.is_alive():
@@ -669,8 +719,14 @@ if __name__ == "__main__":
               print("It hums in her hand.")
               print("Then hums louder.")
               print("She looks at you with something like wonder.")
+              print("\nHe notices. Looks at her. Then at you.")
+              print("He nods toward her almost imperceptibly.")
+              print("As if summoned by it, she speaks.")
+              print("Her voice barely makes it out.")
+              print("'I'm Mira.'")
+              print("\nA pause.")
               print("'It never did that for him.'")
-              print("'Or for me.'")
+              print("She means the rune. She doesn't explain further.")
               print("\n'We found it right outside the door.'")
               print("She glances up toward where the fog still sits on the slope.")
               print("'Just sitting on the ground at the very threshold.'")
@@ -703,37 +759,53 @@ if __name__ == "__main__":
           print("The bell tolls a fourth time.")
           print("Behind you — footsteps. Running.")
           print("Then nothing.")
-          print("The mountain doesn't comment.")
+          print("Just the slope ahead of you.")
+          print("Just the dark.")
+          print("You keep moving.")
           player.flags['travelers_ignored'] = True
-          player.morality += 1  # minor — turned away from people who needed help
+          player.corruption += 1
 
   elif choice_2 == "2":
-    print("\nYou stay where you are.")
-    print("The sound cuts short.")
+    print("\nYou observe the ordeal for a moment.")
+    print("Two figures. Something descending.")
+    print("The sound — high, desperate — carries down the slope.")
+    print("\nYou don't move.")
+    print("\nThe sound cuts short.")
     print("Then silence.")
     print("The kind that comes after something has been decided.")
-    print("\nYou don't look.")
+    print("\nYou don't look back.")
     print("The mountain air feels different now. Colder.")
     print("Not because the temperature changed.")
     print("\nThe bell tolls from below. Four times.")
     print("You count them without meaning to.")
+    print("You don't know why that bothers you.")
+    print("You keep moving.")
     player.flags['travelers_ignored'] = True
-    player.morality += 1  # minor — stayed put, let it happen
+    player.corruption += 1
 
   elif choice_2 == "3":
     print("\nYou turn away from the sound.")
     print("The slope pulls you forward.")
     print("The town below pulls harder.")
     print("\nYou don't look back.")
-    print("The Path doesn't require it.")
     player.flags['travelers_ignored'] = True
     player.flags['skipped_raven_fight'] = True
 
   if player.flags.get('travelers_ignored') and not player.flags.get('companion'):
-    print("\nSomewhere behind you on the mountain —")
+    print("\nSomewhere behind you on the slope —")
     print("something happens.")
     print("You don't know what.")
-    print("You chose not to.")
+    print("You didn't look.")
+
+  if not player.inventory.has_item("Sort Rune") and "sort" not in player.spells:
+    print("\n\nSomething catches your eye on the path ahead.")
+    print("A small stone. Carved. Half-buried in the dirt.")
+    print("Like it's been sitting there waiting for the right set of boots to walk past.")
+    print("It hums faintly when you pick it up.")
+    print("Louder when your hand closes around it.")
+    print("You don't know what it is yet.")
+    print("But it knows what you are.")
+    player.inventory.add("Sort Rune")
 
   if player.inventory.has_item("Sort Rune"):
     print("\n\nThe Sort Rune in your pack grows warm.")
@@ -867,33 +939,37 @@ if __name__ == "__main__":
     print("'Vardeth.' He says it quietly.")
     print("'First time seeing it up close.'")
     print("He doesn't say anything else.")
-    print("He doesn't have to.")
+    print("\nThe woman is looking at the crowd.")
+    print("Not at the square. Not at the device.")
+    print("At faces.")
+    print("One by one.")
+    print("Like she's looking for someone.")
+    print("She doesn't say anything.")
+    print("But her hands have gone very still.")
   elif player.flags.get('companion_mira'):
-    print("\nMira has stayed close since the mountain.")
+    print("\nMira has stayed close since the slope.")
     print("Not clinging. Just... near.")
-    print("She looks at the square. At the device at its center.")
-    print("At the dark bag.")
-    print("Something in her face tightens.")
-    print("Then deliberately relaxes.")
-    print("'He brought me here because he said it would be worth it.'")
-    print("She watches an Enforcer cross the square.")
-    print("'I'm still deciding if he was right about anything.'")
-    print("\nShe looks at the device.")
-    print("Then at you.")
-    print("Something passes between you that neither of you names.")
-    print("Not yet.")
+    print("\nShe isn't looking at the device.")
+    print("She isn't looking at the Enforcers.")
+    print("She's looking at faces.")
+    print("Moving through the crowd with her eyes the way someone does")
+    print("when they're searching for one specific person")
+    print("and terrified of what they might find.")
+    print("Or not find.")
+    print("\n'She has to be here somewhere...'")
+    print("A pause.")
+    print("'Did they take her?'")
+    print("Her voice is tiny when she says it.")
+    print("It doesn't feel like a question meant for answering.")
+    print("She's already moved on to the next face.")
   elif player.flags.get('traveler_owes_life_debt'):
     print("\nThey're not here.")
-    print("You sent them into the dark.")
-    print("Whether that was mercy or abandonment")
-    print("depends on what happens next.")
-    print("You don't know yet.")
+    print("You sent them away from the slope.")
+    print("What happens next isn't a weight you have to burden.")
 
-  print("\n\nYou need to move through Vardeth.")
-  print("The square. The streets. The grates.")
-  print("And somewhere in this town —")
-  print("a door that doesn't look like much.")
-  print("Behind it, an old woman who does.")
+  print("\n\nThe square is behind you now.")
+  print("The streets receive you.")
+  print("Narrower here. Quieter.")
 
   print("\n[1: Approach an Enforcer. Pay Tithe openly.]")
   print("[2: Move through the square quietly. Find the side streets.]")
@@ -994,7 +1070,7 @@ if __name__ == "__main__":
       print("He looks you over once more.")
       print("'Don't make me regret it.'")
       player.flags['enforcer_aligned'] = True
-      player.morality += 3  # moderate — chose the oppressor's side
+      player.corruption += 3  # moderate — chose the oppressor's side
       if player.flags.get('maren_spoke_freely'):
         print("\nSomething occurs to you.")
         print("Something an old woman said in hushed tones.")
@@ -1029,20 +1105,20 @@ if __name__ == "__main__":
     print("The sky noticed.")
     print("It's keeping track.")
 
-  # ── morality tag: enforcer alignment ─────────────────────
+  # ── corruption tag: enforcer alignment ───────────────────
   if player.flags.get('enforcer_aligned'):
-    player.morality = max(player.morality, 3)  # minimum shady for full alignment
+    player.corruption = max(player.corruption, 3)  # minimum shady for full alignment
 
   # ── approach to Maren's ───────────────────────────────────
   print("\n\nYou find it almost by accident.")
   print("A door that doesn't announce itself.")
   print("No sign. No window.")
 
-  if player.morality >= 8:
+  if player.corruption >= 8:
     print("Just a door that's slightly warmer than the stone around it.")
     print("You've stopped noticing things like that.")
     print("Or maybe you've just stopped caring what they mean.")
-  elif player.morality >= 4:
+  elif player.corruption >= 4:
     print("Just a door that's slightly warmer than the stone around it.")
     print("You notice it the way you notice everything now.")
     print("Cataloguing. Assessing. Old habits are softer than new ones.")
@@ -1059,7 +1135,7 @@ if __name__ == "__main__":
   print("In Vardeth, that alone means something.")
 
   if player.flags.get('companion_mira'):
-    if player.morality >= 4:
+    if player.corruption >= 4:
       print("\nMira stops one step behind you at the threshold.")
       print("You don't see her face.")
       print("You don't need to.")
@@ -1099,7 +1175,7 @@ if __name__ == "__main__":
     print("You keep walking.")
   else:
     maren = Maren()
-    maren.shop(player)
+    maren.shop(player, skip_greet=True)
 
   player.flags['vardeth_story_done'] = True
   player.flags['maren_available'] = True
