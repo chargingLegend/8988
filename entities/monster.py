@@ -229,6 +229,10 @@ class TrollKing(Monster):
     target.take_damage(dmg, "bludgeoning")
     return dmg
 
+def _lazy_criminal():
+  from entities.humanoid import Criminal
+  return Criminal()
+
 MONSTER_DB = {
     "Rat": Rat,
     "Bat": Bat,
@@ -239,5 +243,6 @@ MONSTER_DB = {
     "Giant Spider": Spider,
     "Cave Troll": CaveTroll,
     "Wraith": Wraith,
-    "Troll King": TrollKing
+    "Troll King": TrollKing,
+    "Criminal": _lazy_criminal,
   }

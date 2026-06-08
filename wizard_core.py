@@ -231,6 +231,10 @@ class Wizard:
       print("The spell fizzles. Something is missing from the weave.")
       return False
 
+    # ── route special python_concept spells ──────────────────
+    if isinstance(spell_entry, dict) and spell_entry.get("python_concept"):
+      return self._cast_special_spell(spell_name, spell_entry, target)
+
     # ── spell entry can be tuple (old) or dict (new with effects) ─
     if isinstance(spell_entry, dict):
       min_dmg = spell_entry.get("min_dmg", 0)
@@ -267,7 +271,6 @@ class Wizard:
       print(f"{self.name} weaves: '{spell_name}'.")
       if target:
         print(desc.format(target=target.name))
-        # apply effect even on zero-damage spells
         if effect and random.random() < effect_chance:
           self._apply_spell_effect(effect, target, spell_name)
       else:
@@ -299,6 +302,410 @@ class Wizard:
       target.add_status(burn)
       print(f"{target.name} catches fire!")
 
+    self.last_spell_cast = spell_name
+    return True
+
+  def _cast_special_spell(self, spell_name, spell_entry, target):
+    """Dispatch logic for all python_concept spells."""
+    concept = spell_entry.get("python_concept", "")
+    power = self.get_spell_power(spell_name)
+
+    # ── SMELT — try/except ────────────────────────────────────
+    if spell_name == "Smelt":
+      resistance = getattr(target, 'fire_resistance', 0)
+      threshold = spell_entry["resist_threshold"]
+      print(f"{self.name} weaves: 'Smelt' Lvl{power}!")
+      print(f"# try:")
+      if resistance <= threshold:
+        print(f"  heat pours into {target.name}. The weave holds.")
+        dmg = random.randint(spell_entry["min_dmg"], spell_entry["max_dmg"]) + power
+        target.take_damage(dmg, "fire")
+        if random.random() < spell_entry.get("effect_chance", 0.6):
+          self._apply_spell_effect("Burn", target, spell_name)
+      else:
+        strip = spell_entry.get("strip_amount", 5) + power
+        print(f"# except FireResistance:")
+        print(f"  resistance too high — stripping {strip} fire resistance instead.")
+        target.fire_resistance = max(0, resistance - strip)
+        print(f"  {target.name} fire resistance: {target.fire_resistance}")
+      return True
+
+    # ── FLASHPOINT — bool ─────────────────────────────────────
+    if spell_name == "Flashpoint":
+      resistance = getattr(target, 'fire_resistance', 0)
+      threshold = spell_entry["resist_threshold"]
+      vulnerable = resistance < threshold
+      print(f"{self.name} weaves: 'Flashpoint' Lvl{power}!")
+      print(f"# vulnerable = {target.name}.fire_resistance < {threshold}")
+      print(f"# vulnerable = {vulnerable}")
+      if vulnerable:
+        print(f"# if vulnerable: True — ignition condition met.")
+        dmg = random.randint(spell_entry["min_dmg"], spell_entry["max_dmg"]) + (power * 2)
+        print(spell_entry["desc"].format(target=target.name))
+        target.take_damage(dmg, "fire")
+        self._apply_spell_effect("Combusting", target, spell_name)
+      else:
+        print(f"# if vulnerable: False — condition not met. Flashpoint fizzles.")
+        print(f"{target.name} has too much fire resistance. The spark finds no purchase.")
+        self.mana += 1  # refund since fizzle
+      return True
+
+    # ── GLACIAL GRIND — while/break ───────────────────────────
+    if spell_name == "Glacial Grind":
+      print(f"{self.name} weaves: 'Glacial Grind' Lvl{power}!")
+      print(f"# while {target.name}.hp > {target.name}.max_hp * 0.5:")
+      hits = 0
+      base_dmg = random.randint(spell_entry["min_dmg"], spell_entry["max_dmg"]) + power
+      while target.hp > target.max_hp * 0.5 and target.is_alive():
+        hits += 1
+        print(f"  the cold grinds. Hit {hits}.")
+        target.take_damage(base_dmg, "cold")
+        if hits >= 4:
+          break
+      if target.hp <= target.max_hp * 0.5:
+        print(f"# break — {target.name} dropped below half HP. The loop ends.")
+      if hits == 4:
+        print(f"# break — max iterations reached.")
+      if random.random() < spell_entry.get("effect_chance", 0.3):
+        self._apply_spell_effect("Frostbitten", target, spell_name)
+      return True
+
+    # ── NULLFROST — None ──────────────────────────────────────
+    if spell_name == "Nullfrost":
+      print(f"{self.name} weaves: 'Nullfrost' Lvl{power}!")
+      if target.status_effects:
+        effect_to_null = target.status_effects[0]
+        print(f"# active_effect = {effect_to_null.name}")
+        print(f"# active_effect = None")
+        target.status_effects.remove(effect_to_null)
+        print(f"  {effect_to_null.name} on {target.name} set to None. It dissolves.")
+      else:
+        print(f"# active_effect = None  ← already None")
+        print(f"  nothing to nullify. The frost returns None.")
+        print(f"  None.")
+      return True
+
+    # ── INTERVAL — range() ────────────────────────────────────
+    if spell_name == "Interval":
+      if power >= 2:
+        hit_range = spell_entry["upgrade_2_range"]
+      elif power >= 1:
+        hit_range = spell_entry["upgrade_1_range"]
+      else:
+        hit_range = spell_entry["hit_range"]
+
+      available_mana = self.mana
+      max_hits = min(hit_range[1] - 1, available_mana)
+      if max_hits < hit_range[0]:
+        print(f"Not enough mana for even one Interval hit. Need {hit_range[0]}, have {available_mana}.")
+        self.mana += 1
+        return False
+
+      print(f"{self.name} weaves: 'Interval' Lvl{power}!")
+      print(f"# for beat in range({hit_range[0]}, {min(hit_range[1], max_hits + 1)}):")
+      total_dmg = 0
+      hit_count = random.randint(hit_range[0], min(hit_range[1] - 1, max_hits))
+      for beat in range(hit_count):
+        dmg = random.randint(spell_entry["min_dmg"], spell_entry["max_dmg"]) + power
+        print(f"  beat {beat + 1} — {dmg} time damage.")
+        target.take_damage(dmg, "time")
+        total_dmg += dmg
+        self.mana -= spell_entry.get("mana_per_hit", 1)
+        if not target.is_alive():
+          break
+      print(f"  Interval struck {hit_count} time(s). Total: {total_dmg} damage.")
+      return True
+
+    # ── RECURRENCE — for loop ─────────────────────────────────
+    if spell_name == "Recurrence":
+      last = getattr(self, 'last_spell_cast', None)
+      if not last or last == "Recurrence":
+        print(f"# Recurrence requires a previous spell to loop.")
+        print(f"  No last spell found. Power dissipates.")
+        self.mana += 1
+        return False
+      last_entry = self.spell_data.get(last)
+      if not last_entry:
+        print(f"  Last spell '{last}' has no data. Cannot recur.")
+        self.mana += 1
+        return False
+      extra_cost = 1
+      if self.mana < extra_cost:
+        print(f"  Not enough mana to recur. Need {extra_cost + 1} total.")
+        self.mana += 1
+        return False
+      self.mana -= extra_cost
+      repeat_count = spell_entry["repeat_count"]
+      print(f"{self.name} weaves: 'Recurrence' Lvl{power}!")
+      print(f"# for iteration in range({repeat_count}):")
+      for i in range(repeat_count):
+        print(f"  iteration {i} — casting {last} again.")
+        min_d = last_entry.get("min_dmg", 0)
+        max_d = last_entry.get("max_dmg", 0)
+        dtype = last_entry.get("dmg_type", "time")
+        if max_d > 0:
+          dmg = random.randint(min_d, max_d)
+          target.take_damage(dmg, dtype)
+        if not target.is_alive():
+          break
+      return True
+
+    # ── EXHUME — list mutation ────────────────────────────────
+    if spell_name == "Exhume":
+      dead_list = getattr(self, 'combat_dead_list', [])
+      print(f"{self.name} weaves: 'Exhume' Lvl{power}!")
+      print(f"# dead_list = {[e.name for e in dead_list]}")
+      if not dead_list:
+        print(f"# dead_list is empty. Nothing to pull.")
+        print(f"  The grave gives nothing back.")
+        return True
+      revived = dead_list.pop()
+      revived_hp = int(revived.max_hp * spell_entry.get("revive_hp_percent", 0.3))
+      revived.hp = revived_hp
+      if not hasattr(self, 'minions'):
+        self.minions = []
+      self.minions.append(revived)
+      print(f"# dead_list.pop() → {revived.name}")
+      print(f"  {revived.name} stirs at {revived_hp} HP. Added to field.")
+      return True
+
+    # ── ERASURE — del ─────────────────────────────────────────
+    if spell_name == "Erasure":
+      print(f"{self.name} weaves: 'Erasure' Lvl{power}!")
+      buffs = [e for e in target.status_effects
+               if hasattr(e, 'is_buff') and e.is_buff]
+      if not buffs:
+        print(f"# del target.active_buff — KeyError: no buff found.")
+        print(f"  Nothing to delete. The spell wastes.")
+        return True
+      to_delete = buffs[0]
+      print(f"# del {target.name}.{to_delete.name}")
+      target.status_effects.remove(to_delete)
+      print(f"  {to_delete.name} on {target.name} — deleted. Not nulled. Gone.")
+      return True
+
+    # ── MAGNITUDE — integer operations ───────────────────────
+    if spell_name == "Magnitude":
+      if not hasattr(self, 'magnitude_active'):
+        self.magnitude_active = 0
+      if power >= 2:
+        duration = spell_entry["upgrade_2_duration"]
+        ceiling = spell_entry["upgrade_2_multiplier_ceiling"]
+      elif power >= 1:
+        duration = spell_entry["upgrade_1_duration"]
+        ceiling = 3
+      else:
+        duration = spell_entry["duration"]
+        ceiling = 3
+      base_dmg = spell_entry["base_dmg"]
+      hp_ratio = self.max_hp / max(self.hp, 1)
+      multiplier = min(int(hp_ratio), ceiling)
+      dmg = int(multiplier * base_dmg) + power
+      print(f"{self.name} weaves: 'Magnitude' Lvl{power}!")
+      print(f"# multiplier = int(max_hp / hp) = int({self.max_hp}/{self.hp}) = {int(hp_ratio)}")
+      print(f"# dmg = {multiplier} * {base_dmg} = {dmg}")
+      print(f"  the number finds {target.name}. {dmg} force damage.")
+      target.take_damage(dmg, "force")
+      self.magnitude_active = duration
+      print(f"  Magnitude active for {duration} more turns.")
+      return True
+
+    # ── SURGE STACK — += ─────────────────────────────────────
+    if spell_name == "Surge Stack":
+      if not hasattr(self, 'surge_stacks'):
+        self.surge_stacks = 0
+      ally_has_status = any(
+        hasattr(a, 'status_effects') and a.status_effects
+        for a in getattr(self, 'active_allies', [])
+      )
+      if not ally_has_status and self.surge_stacks == 0:
+        print(f"{self.name} weaves: 'Surge Stack' Lvl{power}!")
+        print(f"# requires ally applying status damage — condition not met.")
+        print(f"  The stack has no fuel. It holds at zero.")
+        return True
+      self.surge_stacks = min(
+        self.surge_stacks + spell_entry["stack_bonus"],
+        spell_entry["max_stacks"] * spell_entry["stack_bonus"]
+      )
+      dmg = random.randint(spell_entry["min_dmg"], spell_entry["max_dmg"])
+      total = dmg + self.surge_stacks + power
+      print(f"{self.name} weaves: 'Surge Stack' Lvl{power}!")
+      print(f"# surge_stacks += {spell_entry['stack_bonus']}")
+      print(f"# surge_stacks = {self.surge_stacks}")
+      print(f"# dmg = base({dmg}) + stack({self.surge_stacks}) = {total}")
+      print(f"  the value compounds. {total} force damage.")
+      target.take_damage(total, "force")
+      return True
+
+    # ── MIRAGE — variable reassignment ───────────────────────
+    if spell_name == "Mirage":
+      original_atk = target.atk
+      new_atk = int(target.atk * 0.5)
+      duration = spell_entry["duration"] + power
+      if not hasattr(self, 'mirage_data'):
+        self.mirage_data = {}
+      self.mirage_data[id(target)] = {
+        "original_atk": original_atk,
+        "turns_left": duration
+      }
+      target.atk = new_atk
+      print(f"{self.name} weaves: 'Mirage' Lvl{power}!")
+      print(f"# {target.name}.atk = {new_atk}  ← was {original_atk}")
+      print(f"  {target.name} believes it is as strong as ever. It is not.")
+      print(f"  Effect lasts {duration} turns.")
+      return True
+
+    # ── DOPPEL — is vs == ─────────────────────────────────────
+    if spell_name == "Doppel":
+      if power >= 2:
+        chance = spell_entry["upgrade_2_chance"]
+        hits = spell_entry["upgrade_2_hits"]
+      elif power >= 1:
+        chance = spell_entry["upgrade_1_chance"]
+        hits = spell_entry["upgrade_1_hits"]
+      else:
+        chance = spell_entry["spawn_chance_base"]
+        hits = spell_entry["hits_absorbed_base"]
+      print(f"{self.name} weaves: 'Doppel' Lvl{power}!")
+      print(f"# spawn_chance = {chance}")
+      if random.random() < chance:
+        self.doppel_hits = hits
+        print(f"# doppel is self → False  (looks the same, is not the same)")
+        print(f"# doppel == self → True   (structurally identical)")
+        print(f"  something steps beside you. It will absorb {hits} hit(s).")
+      else:
+        self.doppel_hits = 0
+        print(f"  the copy doesn't hold. It dissolves before it forms.")
+      return True
+
+    # ── SUMMON STACK — list.append() ─────────────────────────
+    if spell_name == "Summon Stack":
+      if not hasattr(self, 'summon_stack'):
+        self.summon_stack = []
+      max_stack = spell_entry["max_stack"]
+      if len(self.summon_stack) >= max_stack:
+        print(f"{self.name} weaves: 'Summon Stack' Lvl{power}!")
+        print(f"# stack is full — len(stack) == {max_stack}")
+        print(f"  the field won't hold another. Stack at maximum.")
+      else:
+        entity_name = f"Shard-{len(self.summon_stack) + 1}"
+        self.summon_stack.append(entity_name)
+        chip = spell_entry["chip_dmg_per_entity"] + power
+        total_chip = len(self.summon_stack) * chip
+        print(f"{self.name} weaves: 'Summon Stack' Lvl{power}!")
+        print(f"# stack.append('{entity_name}')")
+        print(f"# stack = {self.summon_stack}")
+        print(f"  {entity_name} joins the field. Stack deals {total_chip} chip damage.")
+        target.take_damage(total_chip, "force")
+      return True
+
+    # ── THRESHOLD — len() ─────────────────────────────────────
+    if spell_name == "Threshold":
+      inv_count = len(self.inventory.items)
+      multiplier = spell_entry["multiplier"] + power
+      dmg = inv_count * multiplier
+      print(f"{self.name} weaves: 'Threshold' Lvl{power}!")
+      print(f"# dmg = len(inventory) * {multiplier}")
+      print(f"# dmg = {inv_count} * {multiplier} = {dmg}")
+      if dmg == 0:
+        print(f"  inventory is empty. len() returns 0. No damage.")
+      else:
+        print(f"  {target.name} feels the weight of every carried thing. {dmg} force damage.")
+        target.take_damage(dmg, "force")
+      return True
+
+    # ── VOIDCHECK — None check ────────────────────────────────
+    if spell_name == "Voidcheck":
+      print(f"{self.name} weaves: 'Voidcheck' Lvl{power}!")
+      none_attrs = [
+        attr for attr in ['active_buff', 'equipped', 'mount', 'ward']
+        if getattr(target, attr, None) is None
+      ]
+      if none_attrs:
+        attr = none_attrs[0]
+        dmg = random.randint(spell_entry["min_dmg"], spell_entry["max_dmg"]) + (power * 2)
+        print(f"# if {target.name}.{attr} is None: True")
+        print(f"  the void is found. Reaching in.")
+        print(f"  {dmg} shadow damage.")
+        target.take_damage(dmg, "shadow")
+      else:
+        minor = spell_entry["minor_dmg"] + power
+        weakest = min(['atk', 'defense'], key=lambda a: getattr(target, a, 999))
+        print(f"# if target has None attribute: False")
+        print(f"# else: set {target.name}.{weakest} = None — creating the void")
+        print(f"  no None found — creating one. {minor} shadow damage.")
+        target.take_damage(minor, "shadow")
+        setattr(target, weakest, None)
+        print(f"  {target.name}.{weakest} = None")
+      return True
+
+    # ── SHRED — string slicing ────────────────────────────────
+    if spell_name == "Shred":
+      name = target.name
+      sliced = name[1:-1]
+      dmg = len(sliced) * 2 + power
+      print(f"{self.name} weaves: 'Shred' Lvl{power}!")
+      print(f"# '{name}'[1:-1] = '{sliced}'")
+      print(f"# dmg = len('{sliced}') * 2 = {dmg}")
+      print(f"  the middle is taken. What remains is a curse.")
+      print(f"  '{sliced}' binds to {target.name}. {dmg} shadow damage.")
+      target.take_damage(dmg, "shadow")
+      if random.random() < spell_entry.get("effect_chance", 0.8):
+        self._apply_spell_effect("Weakened", target, spell_name)
+      return True
+
+    # ── RECAST — type casting ─────────────────────────────────
+    if spell_name == "Recast":
+      cycles = spell_entry["cycles"] + power
+      decay = spell_entry["decay_multiplier"]
+      print(f"{self.name} weaves: 'Recast' Lvl{power}!")
+      print(f"# hp = float({target.hp})")
+      hp_float = float(target.hp)
+      print(f"# for cycle in range({cycles}):")
+      for cycle in range(cycles):
+        hp_float *= decay
+        print(f"  cycle {cycle}: float *= {decay} → {hp_float:.2f}")
+      new_hp = int(hp_float)
+      dmg = target.hp - new_hp
+      print(f"# hp = int({hp_float:.2f}) = {new_hp}")
+      print(f"  type cast complete. {target.name} loses {dmg} HP from the conversion.")
+      target.hp = max(0, new_hp)
+      if not target.is_alive():
+        print(f"{target.name} falls.")
+      return True
+
+    # ── OVERWRITE — dict.update() ─────────────────────────────
+    if spell_name == "Overwrite":
+      stats = {k: getattr(target, k, None)
+               for k in ['atk', 'defense'] if getattr(target, k, None) is not None}
+      if not stats:
+        print(f"  No stats to overwrite.")
+        return True
+      stat_key = random.choice(list(stats.keys()))
+      original = stats[stat_key]
+      new_val = int(original * spell_entry["debuff_multiplier"])
+      duration = spell_entry["duration"] + power
+      if not hasattr(self, 'overwrite_data'):
+        self.overwrite_data = {}
+      self.overwrite_data[f"{id(target)}_{stat_key}"] = {
+        "original": original, "turns_left": duration,
+        "target": target, "stat": stat_key
+      }
+      setattr(target, stat_key, new_val)
+      print(f"{self.name} weaves: 'Overwrite' Lvl{power}!")
+      print(f"# target_stats.update({{'{stat_key}': {new_val}}})")
+      print(f"  {target.name}.{stat_key}: {original} → {new_val}")
+      print(f"  The old value is gone. Lasts {duration} turns.")
+      self._apply_spell_effect("Weakened", target, spell_name)
+      return True
+
+    # ── fallback for unmapped concepts ───────────────────────
+    print(f"{self.name} weaves: '{spell_name}'.")
+    if target and spell_entry.get("max_dmg", 0) > 0:
+      dmg = random.randint(spell_entry["min_dmg"], spell_entry["max_dmg"]) + power
+      target.take_damage(dmg, spell_entry.get("dmg_type", "arcane"))
+    if spell_name != "Recurrence":
+      self.last_spell_cast = spell_name
     return True
 
   def _apply_spell_effect(self, effect, target, spell_name):

@@ -432,3 +432,52 @@ class TitheCollector(Humanoid):
       print(f"{self.name} strikes with a ledger-bound staff! {dmg} damage!")
       target.take_damage(dmg, "physical")
       return dmg
+
+class Criminal(Humanoid):
+  def __init__(self):
+    super().__init__(
+      name="Criminal",
+      hp=30,
+      desc="A hollow-eyed figure who couldn't pay the tithe. "
+           "Now takes from those who can.",
+      exp_value=20,
+      atk=4,
+      defense=1,
+      level=2,
+      gold_reward=6,
+      loot_table=[("Stolen Coin", 60), ("Cracked Blade", 25)],
+      abilities=["Desperation Strike"]
+    )
+    self.mana = 8
+    self.max_mana = 8
+    self.faction = "None"
+    self.fled = False
+
+  def attack(self, target):
+    target_low_hp = target.hp <= target.max_hp * 0.25
+
+    # ── desperation strike at low player hp ──────────────────
+    if target_low_hp and self.mana >= 4:
+      self.mana -= 4
+      dmg = random.randint(6, 10) + self.atk
+      print(f"\n{self.name} sees the blood.")
+      print(f"Something animal takes over.")
+      print(f"The blade comes down with everything they have left. {dmg} damage!")
+      target.take_damage(dmg, "physical")
+      return dmg
+
+    # ── 30% chance to feint and strike twice ─────────────────
+    if random.randint(1, 100) <= 30:
+      dmg1 = random.randint(2, 4) + self.atk
+      dmg2 = random.randint(1, 3)
+      print(f"{self.name} feints left — then right. {dmg1} damage!")
+      target.take_damage(dmg1, "physical")
+      print(f"A second slash from nowhere. {dmg2} damage!")
+      target.take_damage(dmg2, "physical")
+      return dmg1 + dmg2
+
+    # ── standard strike ──────────────────────────────────────
+    dmg = random.randint(3, 6) + self.atk
+    print(f"{self.name} lunges with a cracked blade. {dmg} damage!")
+    target.take_damage(dmg, "physical")
+    return dmg
