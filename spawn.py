@@ -1,5 +1,5 @@
 import random
-from entities.monster import MONSTER_DB
+from enemy import BESTIARY
 
 
 class EnemySpawner:
@@ -9,9 +9,9 @@ class EnemySpawner:
   def spawn(self, player_level):
     if player_level >= self.location.level_cap:
       boss_name = self.location.boss
-      if boss_name not in MONSTER_DB:
-        raise ValueError(f"Boss {boss_name} not defined in MONSTER_DB")
-      return MONSTER_DB[boss_name](), True
+      if boss_name not in BESTIARY:
+        raise ValueError(f"Boss {boss_name} not defined in BESTIARY")
+      return BESTIARY[boss_name](), True
 
     enemy_table = self.location.enemy_table
     if not enemy_table:
@@ -20,7 +20,7 @@ class EnemySpawner:
     enemies, weights = zip(*enemy_table)
     enemy_name = random.choices(enemies, weights=weights, k=1)[0]
 
-    if enemy_name not in MONSTER_DB:
-      raise ValueError(f"Monster {enemy_name} not defined in MONSTER_DB")
+    if enemy_name not in BESTIARY:
+      raise ValueError(f"Monster {enemy_name} not defined in BESTIARY")
 
-    return MONSTER_DB[enemy_name](), False
+    return BESTIARY[enemy_name](), False

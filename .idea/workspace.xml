@@ -1,13 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="835b3a01-da1c-4899-ae46-58ecf35d64ec" name="Changes" comment="refactor: location hierarchy, spawn, combat + 96 new tests">
+    <list default="true" id="835b3a01-da1c-4899-ae46-58ecf35d64ec" name="Changes" comment="-main.py made more revisions to story logic">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/systems/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/systems/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test_pythonproject4.py" beforeDir="false" afterPath="$PROJECT_DIR$/test_pythonproject4.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/wizard_core.py" beforeDir="false" afterPath="$PROJECT_DIR$/wizard_core.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/wizard_schools.py" beforeDir="false" afterPath="$PROJECT_DIR$/wizard_schools.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -51,6 +46,7 @@
   <component name="PropertiesComponent">{
   &quot;keyToString&quot;: {
     &quot;Python tests.pytest in test_pythonproject4.py.executor&quot;: &quot;Run&quot;,
+    &quot;Python.combat.executor&quot;: &quot;Run&quot;,
     &quot;Python.main.executor&quot;: &quot;Run&quot;,
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
@@ -60,7 +56,7 @@
     &quot;settings.editor.selected.configurable&quot;: &quot;com.jetbrains.python.configuration.PyIntegratedToolsModulesConfigurable&quot;
   }
 }</component>
-  <component name="RunManager" selected="Python tests.pytest in test_pythonproject4.py">
+  <component name="RunManager" selected="Python.main">
     <configuration name="main" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="PythonProject4" />
       <option name="ENV_FILES" value="" />
@@ -104,8 +100,8 @@
     </configuration>
     <recent_temporary>
       <list>
-        <item itemvalue="Python tests.pytest in test_pythonproject4.py" />
         <item itemvalue="Python.main" />
+        <item itemvalue="Python tests.pytest in test_pythonproject4.py" />
       </list>
     </recent_temporary>
   </component>
@@ -156,7 +152,55 @@
       <option name="project" value="LOCAL" />
       <updated>1780697745637</updated>
     </task>
-    <option name="localTasksCounter" value="5" />
+    <task id="LOCAL-00005" summary="&quot;Fix enemy combat damage pipeline and add tactical AI escalation&#10;&#10;- Wire enemy attack() return values to player.take_damage() across all humanoid classes (DesperateTraveler, Enforcer, TitheCollector) — resolves endless combat loop&#10;- Add tactical HP conditional to all humanoid attack() methods: escalates to finisher move when player HP is at or below 25%&#10;- Fix Humanoid base class __init__ to accept mana, max_mana, manabda as parameters instead of hardcoded values&#10;- Expand test suite from 139 to 152 tests — all passing&quot;">
+      <option name="closed" value="true" />
+      <created>1780798139995</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1780798140005</updated>
+    </task>
+    <task id="LOCAL-00006" summary="Expand combat system: status effects, spell mechanics, morality, balance pass&#10;&#10;- Added 8 new status effects: Slowed, Disoriented, Stuttered, Shattered, Weakened, Frostbitten, Charging (3-turn special move tracker)&#10;- Converted all spell_data from tuples to dicts with effect, effect_chance, cooldown fields&#10;- Every school now has mechanical identity — Dim disorients with 3-turn cooldown and no-stack guard, Glaze slows, Rattle weakens, False Step shatters, etc&#10;- Scaled all spell damage ~30% across all 9 schools&#10;- Added morality system (0-3 neutral, 4-7 shady, 8+ dark) wired to player choices&#10;- Maren approach fully rewritten — morality-reactive narration, choice to enter or not, Mira companion tells at threshold&#10;- Fixed gold/loot awards in simple_combat (not just grind)&#10;- Fixed Caleb escalation gated behind level 2+ check&#10;- Added post-combat rewards to simple_combat&#10;- Added spell cooldown tick system for player and enemies&#10;- Added charge interrupt on 30% HP threshold hit&#10;- Added skip_turn handling in combat loop for Slowed/Shattered&#10;- TitheCollector immune to Disoriented&#10;- Expanded test suite to 174 tests">
+      <option name="closed" value="true" />
+      <created>1780807682317</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1780807682317</updated>
+    </task>
+    <task id="LOCAL-00007" summary="fix: rename morality to corruption, fix Mira/Maren bugs, polish main.py narrative, bump RavenSwarm gold, add 191 passing tests&#10;&#10;- Renamed morality -&gt; corruption across wizard_core.py and main.py with clear scale comments&#10;- Fixed Mira appearing as combat option before joining (combat.py prompt now conditional)&#10;- Fixed Maren double description on entry (skip_greet param added to shop())&#10;- Fixed sort() to work with class-based locations via getattr() fallback&#10;- Fixed Ignite desc hardcoded feathers reference removed&#10;- Fixed double gold/drop counting in grind.py (combat.py is single source of truth)&#10;- Bumped RavenSwarm gold_reward 5 -&gt; 15&#10;- Rewrote main.py opening through Vardeth for narrative coherence and immersion&#10;- Added Ledger voice 'He's here' before wizard arrival&#10;- Guaranteed Sort Rune reaches player on all paths&#10;- Added mira_sister_known flag and sister lore (prodigy, busted door)&#10;- Added 191 passing tests covering corruption, merchant, wizard core, sort, combat, items, inventory, monsters">
+      <option name="closed" value="true" />
+      <created>1780874550648</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1780874550648</updated>
+    </task>
+    <task id="LOCAL-00008" summary="feat: add 18 new spells across all 9 schools with full combat logic and 253 passing tests&#10;&#10;- Added 2 new spells per school (18 total), each teaching a distinct Python concept&#10;- Pyromancy: Smelt (try/except), Flashpoint (bool resistance check)&#10;- Cryomancy: Glacial Grind (while/break), Nullfrost (None)&#10;- Chronomancy: Interval (range()), Recurrence (for loop)&#10;- Necromancy: Exhume (list mutation), Erasure (del)&#10;- Enhancement: Magnitude (integer operations), Surge Stack (+=)&#10;- Illusion: Mirage (variable reassignment), Doppel (is vs ==)&#10;- Conjuration: Summon Stack (list.append()), Threshold (len())&#10;- Shadow: Voidcheck (None check), Shred (string slicing)&#10;- Transmutation: Recast (type casting), Overwrite (dict.update())&#10;- Wired all 18 spells via _cast_special_spell dispatcher in wizard_core.py&#10;- Each spell prints its Python concept as inline comments during combat&#10;- Upgrade system tracked per spell (max 2 upgrades each)&#10;- last_spell_cast tracking added for Recurrence&#10;- Added make_wizard and make_target test helpers&#10;- 253 tests passing">
+      <option name="closed" value="true" />
+      <created>1780886935067</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1780886935067</updated>
+    </task>
+    <task id="LOCAL-00009" summary="-main.py made more revisions to story logic">
+      <option name="closed" value="true" />
+      <created>1780941336131</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1780941336135</updated>
+    </task>
+    <task id="LOCAL-00010" summary="-main.py made more revisions to story logic">
+      <option name="closed" value="true" />
+      <created>1780970298451</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1780970298451</updated>
+    </task>
+    <option name="localTasksCounter" value="11" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
@@ -165,6 +209,11 @@
     <MESSAGE value="refactor: split characters.py into wizard_core, wizard_schools, wizard_abilities, combat, wizard&#10;&#10;- wizard_core.py: Wizard class, init, stats, leveling, status effects, cast methods&#10;- wizard_schools.py: choose_school, unlock_abilities, learn_spell_sort, sort&#10;- wizard_abilities.py: all ability methods, elementals promoted to top-level classes&#10;- combat.py: simple_combat&#10;- wizard.py: assembly point, patches all methods onto Wizard at import&#10;- deleted characters.py&#10;- updated imports in main.py and test_pythonproject4.py&#10;- all 32 tests passing" />
     <MESSAGE value="added to main" />
     <MESSAGE value="refactor: location hierarchy, spawn, combat + 96 new tests" />
-    <option name="LAST_COMMIT_MESSAGE" value="refactor: location hierarchy, spawn, combat + 96 new tests" />
+    <MESSAGE value="&quot;Fix enemy combat damage pipeline and add tactical AI escalation&#10;&#10;- Wire enemy attack() return values to player.take_damage() across all humanoid classes (DesperateTraveler, Enforcer, TitheCollector) — resolves endless combat loop&#10;- Add tactical HP conditional to all humanoid attack() methods: escalates to finisher move when player HP is at or below 25%&#10;- Fix Humanoid base class __init__ to accept mana, max_mana, manabda as parameters instead of hardcoded values&#10;- Expand test suite from 139 to 152 tests — all passing&quot;" />
+    <MESSAGE value="Expand combat system: status effects, spell mechanics, morality, balance pass&#10;&#10;- Added 8 new status effects: Slowed, Disoriented, Stuttered, Shattered, Weakened, Frostbitten, Charging (3-turn special move tracker)&#10;- Converted all spell_data from tuples to dicts with effect, effect_chance, cooldown fields&#10;- Every school now has mechanical identity — Dim disorients with 3-turn cooldown and no-stack guard, Glaze slows, Rattle weakens, False Step shatters, etc&#10;- Scaled all spell damage ~30% across all 9 schools&#10;- Added morality system (0-3 neutral, 4-7 shady, 8+ dark) wired to player choices&#10;- Maren approach fully rewritten — morality-reactive narration, choice to enter or not, Mira companion tells at threshold&#10;- Fixed gold/loot awards in simple_combat (not just grind)&#10;- Fixed Caleb escalation gated behind level 2+ check&#10;- Added post-combat rewards to simple_combat&#10;- Added spell cooldown tick system for player and enemies&#10;- Added charge interrupt on 30% HP threshold hit&#10;- Added skip_turn handling in combat loop for Slowed/Shattered&#10;- TitheCollector immune to Disoriented&#10;- Expanded test suite to 174 tests" />
+    <MESSAGE value="fix: rename morality to corruption, fix Mira/Maren bugs, polish main.py narrative, bump RavenSwarm gold, add 191 passing tests&#10;&#10;- Renamed morality -&gt; corruption across wizard_core.py and main.py with clear scale comments&#10;- Fixed Mira appearing as combat option before joining (combat.py prompt now conditional)&#10;- Fixed Maren double description on entry (skip_greet param added to shop())&#10;- Fixed sort() to work with class-based locations via getattr() fallback&#10;- Fixed Ignite desc hardcoded feathers reference removed&#10;- Fixed double gold/drop counting in grind.py (combat.py is single source of truth)&#10;- Bumped RavenSwarm gold_reward 5 -&gt; 15&#10;- Rewrote main.py opening through Vardeth for narrative coherence and immersion&#10;- Added Ledger voice 'He's here' before wizard arrival&#10;- Guaranteed Sort Rune reaches player on all paths&#10;- Added mira_sister_known flag and sister lore (prodigy, busted door)&#10;- Added 191 passing tests covering corruption, merchant, wizard core, sort, combat, items, inventory, monsters" />
+    <MESSAGE value="feat: add 18 new spells across all 9 schools with full combat logic and 253 passing tests&#10;&#10;- Added 2 new spells per school (18 total), each teaching a distinct Python concept&#10;- Pyromancy: Smelt (try/except), Flashpoint (bool resistance check)&#10;- Cryomancy: Glacial Grind (while/break), Nullfrost (None)&#10;- Chronomancy: Interval (range()), Recurrence (for loop)&#10;- Necromancy: Exhume (list mutation), Erasure (del)&#10;- Enhancement: Magnitude (integer operations), Surge Stack (+=)&#10;- Illusion: Mirage (variable reassignment), Doppel (is vs ==)&#10;- Conjuration: Summon Stack (list.append()), Threshold (len())&#10;- Shadow: Voidcheck (None check), Shred (string slicing)&#10;- Transmutation: Recast (type casting), Overwrite (dict.update())&#10;- Wired all 18 spells via _cast_special_spell dispatcher in wizard_core.py&#10;- Each spell prints its Python concept as inline comments during combat&#10;- Upgrade system tracked per spell (max 2 upgrades each)&#10;- last_spell_cast tracking added for Recurrence&#10;- Added make_wizard and make_target test helpers&#10;- 253 tests passing" />
+    <MESSAGE value="-main.py made more revisions to story logic" />
+    <option name="LAST_COMMIT_MESSAGE" value="-main.py made more revisions to story logic" />
   </component>
 </project>

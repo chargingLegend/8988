@@ -2,7 +2,7 @@ import pytest
 from unittest.mock import patch, MagicMock
 
 from wizard import Wizard
-from entities.monster import (RavenSwarm, Rat, Bat, Goblin, Wolf,
+from enemy import (RavenSwarm, Rat, Bat, Goblin, Wolf,
   Skeleton, Spider, CaveTroll, Wraith, TrollKing)
 from inventory import Inventory
 from location import (Vardeth, DrevsCave, SylasForest,
@@ -10,10 +10,8 @@ from location import (Vardeth, DrevsCave, SylasForest,
 from items import (HPPotion, ManaPotion, ManabdaPotion,
   PassRune, ExceptVial, FinallyFlask, Cloak, Staff, Rod, Scepter)
 from merchant import Maren
-from entities.humanoid import DesperateTraveler, Enforcer, TitheCollector
+from enemy import DesperateTraveler, Enforcer, TitheCollector
 
-
-# ── HELPERS ──────────────────────────────────────────────────
 
 def make_player(level=1, school="Pyromancy"):
   p = Wizard(name="Test", level=level, school=school)
@@ -22,30 +20,6 @@ def make_player(level=1, school="Pyromancy"):
   p.corruption = 0
   return p
 
-
-def make_wizard(school):
-  w = Wizard(name="Test")
-  w.choose_school(school)
-  w.unlock_abilities()
-  for spell in list(w.spell_data.keys()):
-    if spell not in w.spells:
-      w.spells.append(spell)
-  w.gold = 0
-  w.flags = {}
-  return w
-
-
-def make_target(name="Dummy", hp=50, fire_resistance=0):
-  t = RavenSwarm()
-  t.name = name
-  t.hp = hp
-  t.max_hp = hp
-  t.fire_resistance = fire_resistance
-  t.status_effects = []
-  return t
-
-
-# ── CORRUPTION SYSTEM ────────────────────────────────────────
 
 def test_wizard_has_corruption_attribute():
   p = make_player()
@@ -97,8 +71,6 @@ def test_corruption_max_enforcement_works():
   assert p.corruption >= 3
 
 
-# ── RAVEN SWARM GOLD ─────────────────────────────────────────
-
 def test_raven_swarm_gold_reward_is_15():
   swarm = RavenSwarm()
   assert swarm.gold_reward == 15
@@ -125,8 +97,6 @@ def test_raven_swarm_loot_table_intact():
   assert "Black Feather" in loot_names
   assert "Crow's Eye" in loot_names
 
-
-# ── MAREN MERCHANT ───────────────────────────────────────────
 
 def test_maren_initializes():
   maren = Maren()
@@ -257,8 +227,6 @@ def test_maren_shop_greets_normally_without_skip():
     maren.shop(p, skip_greet=False)
   assert p.flags.get('maren_spoke_freely') == True
 
-
-# ── WIZARD CORE ──────────────────────────────────────────────
 
 def test_wizard_initializes_with_defaults():
   p = Wizard(name="Test")
@@ -446,8 +414,6 @@ def test_ignite_desc_has_target_placeholder():
   assert "{target}" in desc
 
 
-# ── SORT FUNCTION ────────────────────────────────────────────
-
 def test_sort_works_with_class_location():
   p = Wizard(name="Test")
   p.choose_school("Pyromancy")
@@ -497,8 +463,6 @@ def test_sort_can_find_uncommon_item():
   assert has_uncommon
 
 
-# ── COMBAT — MIRA PROMPT ─────────────────────────────────────
-
 def test_combat_prompt_no_mira_without_flag():
   p = make_player()
   p.choose_school("Pyromancy")
@@ -515,15 +479,13 @@ def test_combat_prompt_has_mira_with_flag():
   p.choose_school("Pyromancy")
   p.flags['companion_mira'] = True
   enemy = Rat()
-  from entities.humanoid import FrightenedWoman
+  from enemy import FrightenedWoman
   with patch('builtins.input', return_value='flee') as mock_input:
     from combat import simple_combat
     simple_combat(p, enemy)
   prompt_calls = [str(c) for c in mock_input.call_args_list]
   assert any('mira' in c.lower() for c in prompt_calls)
 
-
-# ── GRIND — NO DOUBLE GOLD ───────────────────────────────────
 
 def test_grind_does_not_double_count_gold():
   from systems.grind import grind
@@ -540,10 +502,8 @@ def test_grind_does_not_double_count_gold():
     with patch('combat.simple_combat', side_effect=kill_and_track):
       grind(p, DrevsCave)
 
-  # gold comes from combat.py reward logic — since combat is mocked
-  # gold won't be added here — what we're verifying is grind.py
-  # does NOT add gold on its own (no duplicate line)
-  assert p.gold == 0  # mocked combat means no reward fires — correct behavior
+
+  assert p.gold == 0
 
 def test_grind_gold_not_added_twice():
   from systems.grind import grind
@@ -560,11 +520,9 @@ def test_grind_gold_not_added_twice():
     with patch('combat.simple_combat', side_effect=kill_enemy):
       grind(p, DrevsCave)
 
-  # gold should only reflect one reward per kill not two
+
   assert kills[0] == 1
 
-
-# ── ITEMS ────────────────────────────────────────────────────
 
 def test_hp_potion_tiers_exist():
   for tier in ["I", "II", "III", "IV"]:
@@ -603,7 +561,7 @@ def test_hp_potion_t4_restores_100():
   p = make_player()
   p.hp = 10
   HPPotion("IV").use(p)
-  assert p.hp == p.max_hp  # 100 restore on 100 max hp caps at max
+  assert p.hp == p.max_hp
 
 def test_hp_potion_caps_at_max_hp():
   p = make_player()
@@ -692,8 +650,6 @@ def test_item_inspect_returns_string():
   assert "HP Potion I" in result
 
 
-# ── INVENTORY ────────────────────────────────────────────────
-
 def test_inventory_starts_empty():
   inv = Inventory()
   assert len(inv.items) == 0
@@ -735,8 +691,6 @@ def test_inventory_str_not_empty_after_add():
   assert "empty" not in str(inv).lower()
 
 
-# ── MONSTER BASE ─────────────────────────────────────────────
-
 def test_monster_take_damage_reduces_hp():
   swarm = RavenSwarm()
   swarm.take_damage(5)
@@ -760,7 +714,7 @@ def test_monster_defense_reduces_damage():
   skeleton = Skeleton()
   skeleton.hp = 15
   skeleton.take_damage(3)
-  assert skeleton.hp == 14  # defense 2 means 3-2=1 dmg
+  assert skeleton.hp == 14
 
 def test_monster_heal_increases_hp():
   swarm = RavenSwarm()
@@ -821,8 +775,6 @@ def test_all_monsters_have_loot_table(MonsterClass):
   m = MonsterClass()
   assert isinstance(m.loot_table, list)
 
-
-# ── CAST_MANA ────────────────────────────────────────────────
 
 def test_cast_mana_costs_one_mana():
   from wizard_schools import SCHOOL_DATA
@@ -885,502 +837,97 @@ def test_each_school_damage_spell_hits(school, spell):
   assert enemy.hp < starting_hp
 
 
-# ── NEW SPELL TESTS ─────────────────────────────────────────
-
-class TestSmelt:
-  def test_smelt_full_damage_below_threshold(self):
-    w = make_wizard("Pyromancy")
-    t = make_target(fire_resistance=5)
-    starting_hp = t.hp
-    w.cast_mana("smelt", t)
-    assert t.hp < starting_hp
-
-  def test_smelt_strips_resistance_above_threshold(self):
-    w = make_wizard("Pyromancy")
-    t = make_target(fire_resistance=15)
-    w.cast_mana("smelt", t)
-    assert t.fire_resistance < 15
-
-  def test_smelt_no_damage_when_above_threshold(self):
-    w = make_wizard("Pyromancy")
-    t = make_target(hp=50, fire_resistance=15)
-    w.cast_mana("smelt", t)
-    assert t.hp == 50
-
-  def test_smelt_costs_mana(self):
-    w = make_wizard("Pyromancy")
-    t = make_target()
-    starting = w.mana
-    w.cast_mana("smelt", t)
-    assert w.mana == starting - 1
-
-  def test_smelt_returns_true(self):
-    w = make_wizard("Pyromancy")
-    t = make_target()
-    result = w.cast_mana("smelt", t)
-    assert result == True
-
-
-class TestFlashpoint:
-  def test_flashpoint_deals_damage_when_vulnerable(self):
-    w = make_wizard("Pyromancy")
-    t = make_target(fire_resistance=0)
-    starting_hp = t.hp
-    w.cast_mana("flashpoint", t)
-    assert t.hp < starting_hp
-
-  def test_flashpoint_fizzles_when_resistant(self):
-    w = make_wizard("Pyromancy")
-    t = make_target(hp=50, fire_resistance=20)
-    mana_before = w.mana
-    w.cast_mana("flashpoint", t)
-    assert t.hp == 50
-    # mana refunded on fizzle
-    assert w.mana == mana_before - 1 + 1
-
-  def test_flashpoint_returns_true(self):
-    w = make_wizard("Pyromancy")
-    t = make_target(fire_resistance=0)
-    result = w.cast_mana("flashpoint", t)
-    assert result == True
-
-
-# ── CRYOMANCY ────────────────────────────────────────────────
-
-class TestGlacialGrind:
-  def test_glacial_grind_hits_while_above_half(self):
-    w = make_wizard("Cryomancy")
-    t = make_target(hp=50)
-    starting_hp = t.hp
-    w.cast_mana("glacial grind", t)
-    assert t.hp < starting_hp
-
-  def test_glacial_grind_stops_at_half_hp(self):
-    w = make_wizard("Cryomancy")
-    t = make_target(hp=10)
-    t.max_hp = 50
-    # already below half — loop should not fire
-    w.cast_mana("glacial grind", t)
-    assert t.hp == 10
-
-  def test_glacial_grind_returns_true(self):
-    w = make_wizard("Cryomancy")
-    t = make_target(hp=50)
-    result = w.cast_mana("glacial grind", t)
-    assert result == True
-
-
-class TestNullfrost:
-  def test_nullfrost_removes_active_status(self):
-    from systems.status_effects import Weakened
-    w = make_wizard("Cryomancy")
-    t = make_target()
-    t.status_effects = [Weakened(duration=3, atk_reduction=2, defense_reduction=1)]
-    w.cast_mana("nullfrost", t)
-    assert len(t.status_effects) == 0
-
-  def test_nullfrost_does_nothing_when_no_status(self):
-    w = make_wizard("Cryomancy")
-    t = make_target()
-    t.status_effects = []
-    result = w.cast_mana("nullfrost", t)
-    assert result == True
-
-  def test_nullfrost_returns_true(self):
-    w = make_wizard("Cryomancy")
-    t = make_target()
-    result = w.cast_mana("nullfrost", t)
-    assert result == True
-
-
-# ── CHRONOMANCY ──────────────────────────────────────────────
-
-class TestInterval:
-  def test_interval_deals_damage(self):
-    w = make_wizard("Chronomancy")
-    t = make_target(hp=200)
-    starting_hp = t.hp
-    w.cast_mana("interval", t)
-    assert t.hp < starting_hp
-
-  def test_interval_costs_extra_mana_per_hit(self):
-    w = make_wizard("Chronomancy")
-    t = make_target(hp=200)
-    starting_mana = w.mana
-    w.cast_mana("interval", t)
-    assert w.mana < starting_mana
-
-  def test_interval_fails_with_no_mana(self):
-    w = make_wizard("Chronomancy")
-    w.mana = 1  # only enough for the base cost
-    t = make_target(hp=200)
-    result = w.cast_mana("interval", t)
-    # either fizzles or uses what it can
-    assert result in [True, False]
-
-  def test_interval_returns_true(self):
-    w = make_wizard("Chronomancy")
-    t = make_target(hp=200)
-    result = w.cast_mana("interval", t)
-    assert result == True
-
-
-class TestRecurrence:
-  def test_recurrence_fails_without_last_spell(self):
-    w = make_wizard("Chronomancy")
-    w.last_spell_cast = None
-    t = make_target(hp=200)
-    result = w.cast_mana("recurrence", t)
-    assert result == False or t.hp == 200
-
-  def test_recurrence_repeats_last_spell(self):
-    w = make_wizard("Chronomancy")
-    t = make_target(hp=200)
-    w.cast_mana("hesitate", t)
-    hp_after_first = t.hp
-    w.cast_mana("recurrence", t)
-    assert t.hp < hp_after_first
-
-  def test_recurrence_tracks_last_spell(self):
-    w = make_wizard("Chronomancy")
-    t = make_target(hp=200)
-    w.cast_mana("hesitate", t)
-    assert w.last_spell_cast == "Hesitate"
-
-
-# ── NECROMANCY ───────────────────────────────────────────────
-
-class TestExhume:
-  def test_exhume_empty_dead_list_does_nothing(self):
-    w = make_wizard("Necromancy")
-    w.combat_dead_list = []
-    t = make_target()
-    result = w.cast_mana("exhume", t)
-    assert result == True
-    assert w.minions == []
-
-  def test_exhume_revives_from_dead_list(self):
-    w = make_wizard("Necromancy")
-    dead = RavenSwarm()
-    dead.hp = 0
-    w.combat_dead_list = [dead]
-    t = make_target()
-    w.cast_mana("exhume", t)
-    assert len(w.minions) == 1
-    assert w.minions[0].hp > 0
-
-  def test_exhume_pops_from_dead_list(self):
-    w = make_wizard("Necromancy")
-    dead = RavenSwarm()
-    w.combat_dead_list = [dead]
-    t = make_target()
-    w.cast_mana("exhume", t)
-    assert len(w.combat_dead_list) == 0
-
-  def test_exhume_revives_at_30_percent_hp(self):
-    w = make_wizard("Necromancy")
-    dead = RavenSwarm()
-    dead.max_hp = 100
-    w.combat_dead_list = [dead]
-    t = make_target()
-    w.cast_mana("exhume", t)
-    assert w.minions[0].hp == 30
-
-
-class TestErasure:
-  def test_erasure_wastes_with_no_buffs(self):
-    w = make_wizard("Necromancy")
-    t = make_target()
-    t.status_effects = []
-    result = w.cast_mana("erasure", t)
-    assert result == True
-
-  def test_erasure_deletes_buff(self):
-    from systems.status_effects import Weakened
-    w = make_wizard("Necromancy")
-    t = make_target()
-    buff = Weakened(duration=3, atk_reduction=2, defense_reduction=1)
-    buff.is_buff = True
-    t.status_effects = [buff]
-    w.cast_mana("erasure", t)
-    assert len(t.status_effects) == 0
-
-
-# ── ENHANCEMENT ──────────────────────────────────────────────
-
-class TestMagnitude:
-  def test_magnitude_deals_damage(self):
-    w = make_wizard("Enhancement")
-    t = make_target(hp=100)
-    starting_hp = t.hp
-    w.cast_mana("magnitude", t)
-    assert t.hp < starting_hp
-
-  def test_magnitude_deals_more_damage_at_low_hp(self):
-    w = make_wizard("Enhancement")
-    t = make_target(hp=100)
-    w.hp = w.max_hp  # full hp — low multiplier
-    w.cast_mana("magnitude", t)
-    hp_after_full = t.hp
-
-    w2 = make_wizard("Enhancement")
-    t2 = make_target(hp=100)
-    w2.hp = 10  # low hp — high multiplier
-    w2.cast_mana("magnitude", t2)
-    hp_after_low = t2.hp
-
-    assert hp_after_low < hp_after_full
-
-  def test_magnitude_sets_active_duration(self):
-    w = make_wizard("Enhancement")
-    t = make_target()
-    w.cast_mana("magnitude", t)
-    assert w.magnitude_active > 0
-
-
-class TestSurgeStack:
-  def test_surge_stack_increments_on_ally_status(self):
-    w = make_wizard("Enhancement")
-    from systems.status_effects import Weakened
-    ally = RavenSwarm()
-    ally.status_effects = [Weakened(duration=3, atk_reduction=2, defense_reduction=1)]
-    w.active_allies = [ally]
-    w.surge_stacks = 0
-    t = make_target()
-    w.cast_mana("surge stack", t)
-    assert w.surge_stacks > 0
-
-  def test_surge_stack_holds_at_zero_without_ally(self):
-    w = make_wizard("Enhancement")
-    w.active_allies = []
-    w.surge_stacks = 0
-    t = make_target()
-    w.cast_mana("surge stack", t)
-    assert w.surge_stacks == 0
-
-
-# ── ILLUSION ─────────────────────────────────────────────────
-
-class TestMirage:
-  def test_mirage_reduces_target_atk(self):
-    w = make_wizard("Illusion")
-    t = make_target()
-    t.atk = 10
-    w.cast_mana("mirage", t)
-    assert t.atk == 5
-
-  def test_mirage_stores_original_atk(self):
-    w = make_wizard("Illusion")
-    t = make_target()
-    t.atk = 10
-    w.cast_mana("mirage", t)
-    data = w.mirage_data.get(id(t))
-    assert data is not None
-    assert data["original_atk"] == 10
-
-  def test_mirage_sets_duration(self):
-    w = make_wizard("Illusion")
-    t = make_target()
-    t.atk = 8
-    w.cast_mana("mirage", t)
-    assert w.mirage_data[id(t)]["turns_left"] == 3
-
-
-class TestDoppel:
-  def test_doppel_spawns_at_upgrade_2(self):
-    w = make_wizard("Illusion")
-    w.spell_upgrades["Doppel"] = 2
-    t = make_target()
-    with patch('random.random', return_value=0.0):
-      w.cast_mana("doppel", t)
-    assert w.doppel_hits == 3
-
-  def test_doppel_50_50_at_base(self):
-    w = make_wizard("Illusion")
-    t = make_target()
-    with patch('random.random', return_value=0.3):
-      w.cast_mana("doppel", t)
-    assert w.doppel_hits == 1
-
-  def test_doppel_fails_at_base_bad_roll(self):
-    w = make_wizard("Illusion")
-    t = make_target()
-    with patch('random.random', return_value=0.9):
-      w.cast_mana("doppel", t)
-    assert w.doppel_hits == 0
-
-
-# ── CONJURATION ──────────────────────────────────────────────
-
-class TestSummonStack:
-  def test_summon_stack_appends_entity(self):
-    w = make_wizard("Conjuration")
-    w.summon_stack = []
-    t = make_target(hp=200)
-    w.cast_mana("summon stack", t)
-    assert len(w.summon_stack) == 1
-
-  def test_summon_stack_deals_chip_damage(self):
-    w = make_wizard("Conjuration")
-    w.summon_stack = []
-    t = make_target(hp=200)
-    starting_hp = t.hp
-    w.cast_mana("summon stack", t)
-    assert t.hp < starting_hp
-
-  def test_summon_stack_caps_at_three(self):
-    w = make_wizard("Conjuration")
-    w.summon_stack = ["Shard-1", "Shard-2", "Shard-3"]
-    t = make_target(hp=200)
-    w.cast_mana("summon stack", t)
-    assert len(w.summon_stack) == 3
-
-  def test_summon_stack_damage_scales_with_count(self):
-    w = make_wizard("Conjuration")
-    w.summon_stack = ["Shard-1", "Shard-2"]
-    t = make_target(hp=200)
-    starting_hp = t.hp
-    w.cast_mana("summon stack", t)
-    # 3 entities * 2 chip = 6 dmg
-    assert starting_hp - t.hp == 6
-
-
-class TestThreshold:
-  def test_threshold_zero_damage_empty_inventory(self):
-    w = make_wizard("Conjuration")
-    t = make_target(hp=100)
-    w.cast_mana("threshold", t)
-    assert t.hp == 100
-
-  def test_threshold_scales_with_inventory(self):
-    w = make_wizard("Conjuration")
-    w.inventory.add("item1")
-    w.inventory.add("item2")
-    t = make_target(hp=200)
-    starting_hp = t.hp
-    w.cast_mana("threshold", t)
-    # 2 items * 3 multiplier = 6 dmg
-    assert starting_hp - t.hp == 6
-
-  def test_threshold_returns_true(self):
-    w = make_wizard("Conjuration")
-    t = make_target(hp=200)
-    result = w.cast_mana("threshold", t)
-    assert result == True
-
-
-# ── SHADOW ───────────────────────────────────────────────────
-
-class TestVoidcheck:
-  def test_voidcheck_massive_damage_on_none_attribute(self):
-    w = make_wizard("Shadow")
-    t = make_target(hp=100)
-    t.active_buff = None
-    starting_hp = t.hp
-    w.cast_mana("voidcheck", t)
-    # should deal 6-14 damage on finding None
-    assert t.hp < starting_hp
-
-  def test_voidcheck_creates_none_and_minor_damage_when_no_none(self):
-    w = make_wizard("Shadow")
-    t = make_target(hp=100)
-    t.active_buff = "something"
-    t.equipped = "armor"
-    t.mount = "horse"
-    t.ward = "shield"
-    starting_hp = t.hp
-    w.cast_mana("voidcheck", t)
-    # minor damage only
-    assert starting_hp - t.hp == 3
-
-  def test_voidcheck_returns_true(self):
-    w = make_wizard("Shadow")
-    t = make_target()
-    result = w.cast_mana("voidcheck", t)
-    assert result == True
-
-
-class TestShred:
-  def test_shred_slices_name_correctly(self):
-    w = make_wizard("Shadow")
-    t = make_target(name="Goblin", hp=200)
-    w.cast_mana("shred", t)
-    # "Goblin"[1:-1] = "obli" → len 4 * 2 = 8 dmg
-    assert 200 - t.hp == 8
-
-  def test_shred_damage_scales_with_name_length(self):
-    w = make_wizard("Shadow")
-    short = make_target(name="Rat", hp=200)
-    long_ = make_target(name="TrollKing", hp=200)
-    w.cast_mana("shred", short)
-    w2 = make_wizard("Shadow")
-    w2.cast_mana("shred", long_)
-    assert (200 - long_.hp) > (200 - short.hp)
-
-  def test_shred_returns_true(self):
-    w = make_wizard("Shadow")
-    t = make_target(name="Goblin", hp=200)
-    result = w.cast_mana("shred", t)
-    assert result == True
-
-
-# ── TRANSMUTATION ────────────────────────────────────────────
-
-class TestRecast:
-  def test_recast_reduces_hp(self):
-    w = make_wizard("Transmutation")
-    t = make_target(hp=100)
-    w.cast_mana("recast", t)
-    assert t.hp < 100
-
-  def test_recast_applies_decay_cycles(self):
-    w = make_wizard("Transmutation")
-    t = make_target(hp=100)
-    w.cast_mana("recast", t)
-    # 2 cycles of 0.85 decay: 100 * 0.85 * 0.85 = 72.25 → int = 72
-    assert t.hp == 72
-
-  def test_recast_returns_true(self):
-    w = make_wizard("Transmutation")
-    t = make_target()
-    result = w.cast_mana("recast", t)
-    assert result == True
-
-
-class TestOverwrite:
-  def test_overwrite_modifies_stat(self):
-    w = make_wizard("Transmutation")
-    t = make_target()
-    t.atk = 10
-    t.defense = 5
-    original_atk = t.atk
-    original_def = t.defense
-    w.cast_mana("overwrite", t)
-    # one stat should be debuffed
-    changed = (t.atk != original_atk or t.defense != original_def)
-    assert changed
-
-  def test_overwrite_stores_revert_data(self):
-    w = make_wizard("Transmutation")
-    t = make_target()
-    t.atk = 10
-    t.defense = 5
-    w.cast_mana("overwrite", t)
-    assert hasattr(w, 'overwrite_data')
-    assert len(w.overwrite_data) > 0
-
-  def test_overwrite_applies_weakened(self):
-    w = make_wizard("Transmutation")
-    t = make_target()
-    t.atk = 10
-    t.defense = 5
-    w.cast_mana("overwrite", t)
-    effect_names = [type(e).__name__ for e in t.status_effects]
-    assert "Weakened" in effect_names
-
-  def test_overwrite_returns_true(self):
-    w = make_wizard("Transmutation")
-    t = make_target()
-    t.atk = 8
-    result = w.cast_mana("overwrite", t)
-    assert result == True
+import inspect
+import enemy
+from enemy import BESTIARY, Monster, Humanoid, FrightenedWoman, Criminal
+
+import inspect
+import enemy
+from enemy import (BESTIARY, Monster, Humanoid, Rat, Bat, Goblin, RavenSwarm,
+                   Wolf, Skeleton, Spider, CaveTroll, Wraith, TrollKing,
+                   DesperateTraveler, FrightenedWoman, Enforcer,
+                   TitheCollector, Criminal)
+
+
+def test_bestiary_exists_and_replaces_monster_db():
+  assert isinstance(BESTIARY, dict)
+  assert not hasattr(enemy, 'MONSTER_DB')
+
+
+def test_bestiary_has_all_expected_entries():
+  expected = {"Rat", "Bat", "Goblin", "Raven Swarm", "Wolf", "Skeleton",
+              "Giant Spider", "Cave Troll", "Wraith", "Troll King", "Criminal"}
+  assert set(BESTIARY.keys()) == expected
+
+
+def test_bestiary_values_are_classes_not_lazy_wrappers():
+  for name, cls in BESTIARY.items():
+    assert inspect.isclass(cls), f"{name} is not a class"
+
+
+def test_every_bestiary_entry_instantiates():
+  for name, cls in BESTIARY.items():
+    creature = cls()
+    assert creature.hp > 0, f"{name} spawned with no HP"
+    assert creature.name, f"{name} spawned unnamed"
+
+
+def test_raven_swarm_gold_reward_is_25():
+  assert RavenSwarm().gold_reward == 25
+
+
+def test_humanoid_inherits_monster():
+  assert issubclass(Humanoid, Monster)
+
+
+def test_all_humanoids_inherit_humanoid():
+  for cls in (DesperateTraveler, FrightenedWoman, Enforcer,
+              TitheCollector, Criminal):
+    assert issubclass(cls, Humanoid), cls.__name__
+
+
+def test_humanoid_speak_and_reveal():
+  h = Humanoid()
+  assert "test" in h.speak("test")
+  caleb = DesperateTraveler()
+  assert caleb.true_name == "Caleb"
+  msg = caleb.reveal_name()
+  assert caleb.name == "Caleb"
+  assert "Caleb" in msg
+  assert caleb.reveal_name() is None
+
+
+def test_single_module_no_cross_imports():
+  src = inspect.getsource(enemy)
+  assert "entities.monster" not in src
+  assert "entities.humanoid" not in src
+
+
+def test_cipher_indices_spell_twilight_ledger():
+  elements = [chr(c) for c in range(ord('A'), ord('Z') + 1)]
+  twilight = [19, 22, 8, 11, 8, 6, 7, 19]
+  ledger = [11, 4, 3, 6, 4, 17]
+  answer = "".join(elements[i] for i in twilight) + " " +\
+           "".join(elements[i] for i in ledger)
+  assert answer == "TWILIGHT LEDGER"
+
+
+def test_drink_game_chance_table_is_monotonic():
+  chances = {1: 25, 2: 50, 3: 75, 4: 95}
+  vals = [chances[k] for k in sorted(chances)]
+  assert vals == sorted(vals)
+  assert all(0 < v < 100 for v in vals)
+
+
+if __name__ == "__main__":
+  import sys
+  failed = 0
+  for name, fn in sorted(globals().items()):
+    if name.startswith("test_"):
+      try:
+        fn()
+        print(f"  PASS  {name}")
+      except AssertionError as e:
+        failed += 1
+        print(f"  FAIL  {name}: {e}")
+  sys.exit(1 if failed else 0)

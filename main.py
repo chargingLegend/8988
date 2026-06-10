@@ -1,8 +1,7 @@
 import random
 from wizard import Wizard
 from combat import simple_combat
-from entities.monster import RavenSwarm
-from entities.humanoid import DesperateTraveler, Enforcer, FrightenedWoman
+from enemy import RavenSwarm, DesperateTraveler, Enforcer, FrightenedWoman
 from items import (HPPotion, ManaPotion, ManabdaPotion, PassRune,
                    ExceptVial, FinallyFlask, Cloak, Staff, Rod, Scepter)
 from merchant import Maren
@@ -293,7 +292,7 @@ if __name__ == "__main__":
   player = Wizard(name=player_name)
   player.flags = {}
   player.gold = 0
-  player.corruption = 0  # 0 = clean | 1-3 = shady | 4-7 = dark | 8+ = corrupted
+  player.corruption = 0
 
   print(f"\nThe terminal pulses once. Accepts it.")
   print(f"Somewhere, something was written down.")
@@ -608,7 +607,7 @@ if __name__ == "__main__":
 
       if player.flags.get('traveler_friend'):
         print("\n[1: 'Stay with me. We handle this together.']")
-        print("[2: 'Go. Hide. I'll draw them off.']")
+        print("[2: 'Go. Hide. When they send more — it's me they'll find waiting.']")
       else:
         print("\n[1: 'Tell me more about this Tithe.']")
         print("[2: 'I'll handle the Enforcers.']")
@@ -646,16 +645,65 @@ if __name__ == "__main__":
 
       else:
         if choice_5 == "1":
-          print("\nHe stares at you.")
-          print("The bell is ringing and you want answers.")
-          print("'Not now.' Flat. Final.")
-          print("He looks at Mira. She's already moving.")
-          print("He follows without another word.")
-          print("Whatever you were to each other in that moment —")
-          print("the slope swallows it.")
-          print("They're gone.")
-          player.flags['travelers_ignored'] = True
-          player.corruption += 1
+          print("\n'The Tithe.' He almost laughs.")
+          print("Almost.")
+          print("'You'll learn more about it down there")
+          print("than I could tell you in a year.'")
+          print("\nThe bell tolls again. Closer somehow.")
+          print("He glances up the slope. Then back at you.")
+          print("\nMira steps forward before he can stop her.")
+          print("'You're going down there.'")
+          print("It isn't a question.")
+          print("'My sister is in Vardeth. Somewhere.'")
+          print("'We can't go back for her. The moment we pass that gate")
+          print("they own us again.'")
+          print("Her voice is steady.")
+          print("Steady the way someone gets")
+          print("when they've run out of room to fall apart.")
+          print("'But you've never entered. You could listen.")
+          print("Just — listen. For word of her.'")
+          print("\nCaleb doesn't object.")
+          print("That tells you how much it matters.")
+          print("\n[1: 'I'll keep an ear out. I promise nothing more.']")
+          print("[2: 'I have my own path. I'm not your errand runner.']")
+          choice_5b = input("\nChoose: ")
+
+          if choice_5b == "1":
+            print("\nMira exhales.")
+            print("Like she'd been holding that breath since the gate.")
+            print("'That's all I'm asking.'")
+            print("\nCaleb looks at you a moment longer than he needs to.")
+            print("Then — deciding something — he points up the slope.")
+            print("'East of the threshold. There's a fold in the rock —")
+            print("an old herder's shelter built into it. Roof's half gone.'")
+            print("'A month out here teaches you where the wind doesn't reach.'")
+            print("'We hold near it at dusk. Every dusk.'")
+            print("'You learn anything about Sera —'")
+            print("\n'Sera.' Mira's voice, small. 'My sister's name is Sera.'")
+            print("'Older than me. Braver than me.'")
+            print("'She'd want you to know her name.'")
+            print("\nCaleb waits for that to pass. Then:")
+            print("'Dusk. The fold. Don't be followed.'")
+            print("\n'If you're smart — you'll forget the town has a name.'")
+            print("He already knows you won't.")
+            print("He doesn't waste another word on it.")
+            player.flags['promised_sister_search'] = True
+            player.flags['rendezvous_known'] = True
+          elif choice_5b == "2":
+            print("\nMira flinches.")
+            print("Small. Quickly buried.")
+            print("But you saw it. So did he.")
+            print("\nCaleb steps between you and her.")
+            print("Not threatening. Just done.")
+            print("'Right.' Cold now. 'Forget I let her ask.'")
+            print("\nThe bell tolls. He doesn't look toward it.")
+            print("He's looking at you.")
+            print("'You'll fit right in down there.'")
+            player.corruption += 1
+
+          print("\nThey move up the slope. Fast.")
+          print("The dark takes them the way it takes everything out here.")
+          player.flags['travelers_fled'] = True
 
         elif choice_5 == "2":
           print("\nHe looks at you for a long moment.")
@@ -671,8 +719,7 @@ if __name__ == "__main__":
           print("They move up the slope. Away from the town.")
           print("Away from everything that brought them here.")
           print("You watch them go.")
-          player.flags['travelers_ignored'] = True
-          player.corruption += 1
+          player.flags['travelers_fled'] = True
 
         elif choice_5 == "3":
           print("\nYou step toward him.")
@@ -728,10 +775,7 @@ if __name__ == "__main__":
               print("It hums in her hand.")
               print("Then hums louder.")
               print("She looks at you with something like wonder.")
-              print("\nHe notices. Looks at her. Then at you.")
-              print("He nods toward her almost imperceptibly.")
-              print("As if summoned by it, she speaks.")
-              print("Her voice barely makes it out.")
+              print("\nHer voice barely makes it out.")
               print("'I'm Mira.'")
               print("\nA pause.")
               print("'It never did that for him.'")
@@ -766,7 +810,7 @@ if __name__ == "__main__":
           print("Just the slope ahead of you.")
           print("Just the dark.")
           print("You keep moving.")
-          player.flags['travelers_ignored'] = True
+          player.flags['travelers_abandoned'] = True
           player.corruption += 1
 
   elif choice_2 == "2":
@@ -808,19 +852,23 @@ if __name__ == "__main__":
     print("You keep moving.")
 
   if player.flags.get('skipped_raven_fight'):
-    print("\nSomething happened on the slope behind you.")
-    print("You're not sure what.")
-    print("You didn't stop to find out.")
+    print("\nBehind you, somewhere up the slope —")
+    print("a sound cuts off mid-note.")
+    print("You couldn't say what it was.")
+    print("You made sure of that.")
 
   if not player.inventory.has_item("Sort Rune") and "sort" not in player.spells:
     print("\n\nSomething catches your eye on the path ahead.")
     print("A small stone. Carved. Half-buried in the dirt.")
-    print("Like it's been sitting there waiting for the right set of boots to walk past.")
-    print("It hums faintly when you pick it up.")
+    print("It hums when you pick it up.")
     print("Louder when your hand closes around it.")
-    print("You don't know what it is yet.")
-    print("But it knows what you are.")
+    print("You don't know what it is.")
+    print("It doesn't have that problem.")
     player.inventory.add("Sort Rune")
+    print("\nYou turn it over once.")
+    print("Then slip it into your pack.")
+    print("The hum fades against the cloth.")
+    print("\nYou walk on.")
 
   if player.inventory.has_item("Sort Rune"):
     print("\n\nThe Sort Rune in your pack grows warm.")
@@ -911,9 +959,9 @@ if __name__ == "__main__":
   print("Everyone keeps walking.")
   print("That might be the worst thing about it.")
 
-  if player.flags.get('companion_duo') or player.flags.get('companion_mira'):
+  if player.flags.get('companion_duo'):
     print("\nCaleb slows before the square opens up.")
-    print("He's already clocked the Enforcers at the corners.")
+    print("He's already counted the Enforcers at the corners.")
     print("You can tell by the way his eyes stopped moving.")
     print("\nHe doesn't say anything.")
     print("He reaches into his pack.")
@@ -929,6 +977,20 @@ if __name__ == "__main__":
     print("'we don't know each other.'")
     print("'Give it ten steps before you follow.'")
     print("He doesn't wait for a response.")
+  elif player.flags.get('companion_mira'):
+    print("\nMira stops before the square opens up.")
+    print("You almost walk past her before you notice.")
+    print("\nShe's seen the Enforcers at the corners.")
+    print("Her hood comes up. Her jacket turns inside out.")
+    print("The way she carries herself flattens —")
+    print("smaller, slower, forgettable.")
+    print("It takes her four seconds.")
+    print("She's done this before.")
+    print("That lands harder than anything she could have said.")
+    print("\n'Walls have eyes here.' Barely a whisper.")
+    print("'Once we're in there — you don't know me.'")
+    print("'Ten steps. Then follow.'")
+    print("She steps into the crowd and becomes part of it.")
 
   print("\nThe square opens up ahead.")
   print("Large. Too large for the town around it.")
@@ -975,23 +1037,22 @@ if __name__ == "__main__":
   print("Everything else is just walls.")
 
   if player.flags.get('companion_duo'):
-    print("\nBeside you —")
-    print("The man and the woman have kept pace.")
-    print("He's been scanning the square since you entered it.")
-    print("She's been watching the grates.")
-    print("'Vardeth.' He says it quietly.")
-    print("'First time seeing it up close.'")
-    print("He doesn't say anything else.")
-    print("\nThe woman is looking at the crowd.")
-    print("Not at the square. Not at the device.")
-    print("At faces.")
+    print("\nThey're not beside you.")
+    print("That was the arrangement.")
+    print("But you find them anyway —")
+    print("the man at a stall across the square,")
+    print("handling a bundle of dried herbs he has no intention of buying.")
+    print("His eyes haven't stopped working the corners.")
+    print("\nThe woman is further off. Half-turned away.")
+    print("Not looking at the device. Not the Enforcers.")
+    print("Faces.")
     print("One by one.")
     print("Like she's looking for someone.")
-    print("She doesn't say anything.")
-    print("But her hands have gone very still.")
+    print("Even from here you can see it —")
+    print("her hands have gone very still.")
   elif player.flags.get('companion_mira'):
-    print("\nMira has stayed close since the slope.")
-    print("Not clinging. Just... near.")
+    print("\nShe's exactly where she said she'd be.")
+    print("Ten steps back. A stranger in the same crowd.")
     print("\nShe isn't looking at the device.")
     print("She isn't looking at the Enforcers.")
     print("She's looking at faces.")
@@ -1013,7 +1074,7 @@ if __name__ == "__main__":
   print("\n\nThe square settles around you.")
   print("The edges busy. The center — less so now.")
 
-  print("\n[1: Approach an Enforcer. Pay Tithe openly.]")
+  print("\n[1: Approach an Enforcer. Get cleared — before they come asking.]")
   print("[2: Move through the square quietly. Find the alleyways.]")
   print("[3: Approach the Enforcers. Tell them you want in.]")
   if player.flags.get('companion_duo') or player.flags.get('companion_mira'):
@@ -1067,19 +1128,24 @@ if __name__ == "__main__":
     player.flags.pop('companion_mira', None)
     player.flags.pop('companion', None)
     player.corruption += 5
-    choice_9 = "3"
+    print("\nThe Enforcer who took your nod finds you")
+    print("before you've decided where to go.")
+    print("'The Collector pays for eyes like yours.'")
+    print("'East end of the square. Tell them what you did today.'")
+    print("'They'll understand.'")
     player.flags['enforcer_aligned'] = True
-    player.corruption = max(player.corruption, 3)
 
   if choice_9 == "1":
-    print("\nThe Enforcer clocks you before you reach him.")
-    print("'Pathwalker.'")
+    print("\nThe Enforcer marks you before you reach him.")
+    print("'New face.'")
     print("He says it the way someone reads a number off a list.")
-    print("'Mass tithe's done for today.'")
+    print("'New faces owe arrival levy. Everyone under this sky")
+    print("pays for the privilege of standing under it.'")
     print("He nods toward a side building.")
-    print("'Private collection. Standard rate.'")
-    print("'Or you can come back tomorrow for the square.'")
-    print("He looks at you the way someone looks at a number.")
+    print("'Pay now. Get your token. Walk where you like.'")
+    print("'Or wait until collection finds you.'")
+    print("A pause that isn't really a pause.")
+    print("'They're less gentle when they have to come looking.'")
     print("\n[1: Submit to private collection — costs 3 Mana and 2 Manabda]")
     print("[2: 'I'll come back for the square.' Walk away.]")
     print("[3: Attack.]")
@@ -1152,6 +1218,8 @@ if __name__ == "__main__":
     print("\nYou approach the nearest Enforcer.")
 
     if player.flags.get('companion_duo') or player.flags.get('companion_mira'):
+      print("\nYou're halfway across the square when you feel it —")
+      print("the weight of being watched by someone who knows you.")
       print("\nYou don't look back.")
       print("You don't need to.")
       print("They'll read it from the direction you're walking.")
@@ -1188,7 +1256,7 @@ if __name__ == "__main__":
       print("He looks you over once more.")
       print("'Don't make me regret it.'")
       player.flags['enforcer_aligned'] = True
-      player.corruption += 3  # moderate — chose the oppressor's side
+      player.corruption += 3
       if player.flags.get('maren_spoke_freely'):
         print("\nSomething occurs to you.")
         print("Something an old woman said in hushed tones.")
@@ -1223,11 +1291,11 @@ if __name__ == "__main__":
     print("The sky noticed.")
     print("It's keeping track.")
 
-  # ── corruption tag: enforcer alignment ───────────────────
+
   if player.flags.get('enforcer_aligned'):
     player.corruption = max(player.corruption, 3)
 
-  # ── Collector's office — enforcer path ───────────────────
+
   if player.flags.get('enforcer_aligned') and not player.flags.get('dara_met'):
     print("\n\nEast end of the square.")
     print("The office isn't hard to find.")
@@ -1273,7 +1341,7 @@ if __name__ == "__main__":
       print("\nYou answer.")
       print("\nShe closes the book.")
       print("Looks at you.")
-      print("'You don't look like a collector.'")
+      print("'You don't look like the usual recruits.'")
       print("Not an insult. More like she's working something out.")
       print("'Most of them come in here already angry about something.'")
       print("'You're not.'")
@@ -1287,7 +1355,7 @@ if __name__ == "__main__":
       player.flags['dara_romance'] = True
     else:
       print(f"\nYou give it.")
-      print("\nShe clocks the tone.")
+      print("\nThe tone registers. Something in her face closes.")
       print("Goes back to her desk without a word.")
       print("\n'School. Prior experience.'")
       print("She writes it all down.")
@@ -1301,7 +1369,7 @@ if __name__ == "__main__":
     player.flags['dara_met'] = True
     player.flags['dara_path'] = 'enforcer'
 
-  # ── approach to Maren's ───────────────────────────────────
+
   print("\n\nYou find it almost by accident.")
   print("A door that doesn't announce itself.")
   print("No sign. No window.")
@@ -1343,7 +1411,7 @@ if __name__ == "__main__":
       print("She doesn't say anything. She just follows.")
 
   if player.flags.get('enforcer_aligned'):
-    print("\nThe woman inside clocks you before you reach the door.")
+    print("\nThe woman inside has seen you before you reach the door.")
     print("The way she straightens isn't welcome.")
     print("It's bracing.")
   else:
@@ -1369,14 +1437,26 @@ if __name__ == "__main__":
     maren = Maren()
     maren.shop(player, skip_greet=True)
 
-  player.flags['vardeth_story_done'] = True
-  player.flags['maren_available'] = True
-  from systems.hub import hub
-  from location import Vardeth
-  hub(player, Vardeth)
+  if player.flags.get('companion_duo'):
+    print("\nOutside, the square has thinned.")
+    print("The tithe crowd is long gone. The Enforcers at the corners")
+    print("have settled into the bored half-attention of a slow shift.")
+    print("\nCaleb drifts back to your side the way strangers don't —")
+    print("without looking at you, without hurrying.")
+    print("'Crowd's gone,' he says to the air. 'Eyes went with it.'")
+    print("Mira appears at your other side a moment later.")
+    print("As if she'd been there all along.")
+    print("Maybe she had.")
+  elif player.flags.get('companion_mira'):
+    print("\nOutside, the square has thinned.")
+    print("The Enforcers at the corners have gone bored and inward.")
+    print("\nMira falls into step beside you.")
+    print("No signal. No fuss.")
+    print("Just close enough to talk")
+    print("and far enough to deny it.")
 
-  # ── Ledger moment — fires once if companions are with you ─────────────────
-  if (player.flags.get('companion_mira') or player.flags.get('companion_duo')) \
+
+  if (player.flags.get('companion_mira') or player.flags.get('companion_duo'))\
       and not player.flags.get('mira_ledger_moment_done'):
 
     if player.flags.get('companion_duo'):
@@ -1384,7 +1464,7 @@ if __name__ == "__main__":
       print("Not to anyone in particular.")
       print("\n'That voice.'")
       print("He says it the way someone mentions a sound they keep hearing in a wall.")
-      print("Flat. Slightly irritated.")
+      print("Toneless. Like you've interrupted something.")
       print("'The one that comes from nowhere.'")
       print("'Talks like it already knows the answer to whatever it's about to say.'")
       print("'Sometimes it's useful. Sometimes it's just... there.'")
@@ -1437,7 +1517,7 @@ if __name__ == "__main__":
 
     player.flags['mira_ledger_moment_done'] = True
 
-  # ── Back in the square — tablet + prisoner transport ─────────────────────
+
   print("\n\nYou're back in the square.")
   print("You know it differently now.")
   print("The first time it stopped you.")
@@ -1475,7 +1555,7 @@ if __name__ == "__main__":
     print("Not yet.")
     print("You pull back.")
 
-  # ── Prisoner transport — the thread that pulls everything ─────────────────
+
   print("\n\nYou're about to move on.")
   print("\nThen — movement on the far side of the square.")
   print("\nTwo Enforcers.")
@@ -1500,13 +1580,81 @@ if __name__ == "__main__":
   print("A back way. Out of the square entirely.")
 
   if player.flags.get('companion_duo'):
-    print("\nCaleb looks at you.")
-    print("One word. Quiet.")
+    print("\nA tug at the edge of your vision —")
+    print("Mira. Pulling at the corner of Caleb's sleeve.")
+    print("Twice. Quick. Right out in the open.")
+    print("\nEvery rule they set on the way in — gone.")
+    print("She's forgotten all of it.")
+    print("\nCaleb's eyes snap to the corners first — Enforcers,")
+    print("bored, not looking — then to her,")
+    print("already wearing the face he saves for telling her no.")
+    print("\nThen he sees hers.")
+    print("\nThe hollowness she's carried since the slope is gone.")
+    print("Burned off. Something fierce and bright underneath.")
+    print("\n'What if Sera's down there?' Barely above a whisper —")
+    print("but her grip on his sleeve doesn't loosen.")
+    print("'Caleb. What if that's where they took her?'")
+    print("\nHe looks at the door.")
+    print("Then back at her.")
+    print("You watch him reach for the careful, measured thing")
+    print("he usually says.")
+    print("\nHe doesn't find it.")
+    print("\n'...Then we find out.' Quiet.")
+    print("He nods toward the alley the guard took.")
     print("'Follow.'")
+    print("\nMira turns to you.")
+    print("The words come fast, like she's been holding them")
+    print("since the gate.")
+    print("'Sera. My older sister.'")
+    print("'The brave one. She'd argue with an Enforcer")
+    print("like it cost nothing — and somehow it never did.'")
+    print("'People listened to her. People followed her.'")
+    print("\n'It's true.' Caleb, quiet. Not arguing for once.")
+    print("'When things got bad, she's the reason we thought")
+    print("we could make it out here at all.'")
+    print("'If Sera could do it — we could do it.'")
+    print("'That was the whole plan.'")
+    print("\n'She braids her hair when she's scared.'")
+    print("Mira says it almost to herself.")
+    print("'So nobody can tell. She thinks nobody knows.'")
+    print("A breath that's almost a laugh and almost isn't.")
+    print("'If she's down there — she's braiding it right now.'")
   elif player.flags.get('companion_mira'):
-    print("\nMira's hand brushes your arm. Once.")
-    print("She tilts her head toward the alley.")
-    print("That's all.")
+    print("\nFingers close around your sleeve.")
+    print("\nMira.")
+    print("You turn — and stop.")
+    print("Because her face has changed.")
+    print("The careful, flattened thing she wears in public is gone.")
+    print("Her eyes are lit. Frightened and hopeful at once —")
+    print("and the hope is winning.")
+    print("\n'What if Sera's down there?'")
+    print("She doesn't let go of your sleeve.")
+    print("'They take people. That's a door people don't come out of.")
+    print("If she's anywhere —'")
+    print("She stops. Steadies herself.")
+    print("'I have to know. Please.'")
+    print("\nThen, quieter — because you've never met her:")
+    print("'Sera. My older sister. The brave one.'")
+    print("'She'd argue with an Enforcer like it cost nothing.'")
+    print("'People followed her. I followed her.'")
+    print("'She braids her hair when she's scared,")
+    print("so nobody can tell.'")
+    print("A breath that's almost a laugh and almost isn't.")
+    print("'If she's down there — she's braiding it right now.'")
+    print("\nShe tilts her head toward the alley the guard took.")
+  elif player.flags.get('promised_sister_search'):
+    print("\nA promise made on a dark slope stirs.")
+    print("Bound hands. A door the town pretends not to see.")
+    print("If Sera is anywhere in Vardeth —")
+    print("it's somewhere like that.")
+    print("You said you'd listen.")
+    print("This is louder than listening.")
+  else:
+    print("\nPeople went through that door.")
+    print("Nobody came back out of it.")
+    print("And the whole square has agreed not to notice.")
+    print("Whatever Vardeth keeps down there —")
+    print("it's the kind of secret a town builds itself around.")
 
   print("\n[1: Follow him into the alley.]")
   print("[2: Hold. Watch where he goes from here.]")
@@ -1519,7 +1667,7 @@ if __name__ == "__main__":
     print("\nYou wait long enough to be certain.")
     print("Then you go anyway.")
 
-  # ── 4. The alley — criminal intercept, rookery spotted ───────────────────
+
   print("\n\nThe alley is narrow enough that the walls catch sound.")
   print("Smell of damp stone. Something old underneath it.")
   print("You move single file.")
@@ -1531,174 +1679,31 @@ if __name__ == "__main__":
     print("\nMira presses close to the wall. Practiced.")
     print("You match her without thinking about it.")
 
-  print("\nHalfway down — a figure steps out of a recess in the stone.")
-  print("Low hat. Shoulders that have been rained on many times.")
-  print("He doesn't move toward you. Just blocks the path.")
-  print("\n'Cost you to know what's down there.'")
-  print("He nods toward the far end of the alley.")
-  print("'Where they take 'em. Cost you one gold.'")
 
-  print("\n[1: Pay him the gold upfront.]")
-  print("[2: Refuse. Walk past him.]")
-  alley_choice = input("\nChoose: ").strip()
-
-  if alley_choice == "1":
-    if player.gold >= 1:
-      player.gold -= 1
-      print("\nYou press the coin into his palm.")
-      print("He looks at it.")
-      print("Then looks at you.")
-      print("'Appreciate it.'")
-      print("He steps aside. Walks back into the recess.")
-      print("You wait for the tip.")
-      print("He doesn't give you one.")
-      print("He just leans there, watching the far wall.")
-      print("\nYou've been conned for a gold.")
-      print("He was testing whether you were the kind who pays without knowing what they're buying.")
-      print("Now he knows.")
-    else:
-      print("\nYou reach for gold you don't have.")
-      print("He sees it before you do.")
-      print("'Never mind.'")
-      print("He steps aside anyway.")
-      alley_choice = "2"
-
-  if alley_choice == "2":
-    print("\nYou move to walk past him.")
-    print("He doesn't stop you.")
-    print("\nBut as you pass he speaks.")
-    print("'Sub-level. Below the dungeon floor.'")
-    print("Quiet. Like he's talking to the wall.")
-    print("'There's a lower tier they don't show on any map.'")
-    print("'If you're going in — you want to know that.'")
-    print("\nYou look at him.")
-    print("He holds up one finger. One gold. After.")
-    print("\nYou give it to him.")
-    if player.gold >= 1:
-      player.gold -= 1
-    print("He takes it. Pockets it.")
-    print("'Decent of you,' he says.")
-    print("He doesn't say anything else.")
-    player.flags['sub_level_known'] = True
-
-  # Ravens spotted from the alley — source unknown yet
   print("\n\nYou're almost at the end of the alley when something moves above you.")
   print("Not wind.")
   print("\nYou look up.")
   print("\nRavens.")
   print("Sitting on a ledge near the roofline, set back from the square.")
   print("More than you'd expect.")
-  print("You don't know what to make of it.")
+  print("Watching the square. Patient in a way birds aren't.")
+  print("You don't know what to make of it yet.")
   print("You keep moving.")
 
-
-  # ── 5. Tavern — barkeep, drunk guard, keys ────────────────────────────────
-  print("\n\nThe tavern sits at the end of the alley like it was waiting.")
-  print("Low ceiling. Smell of old smoke and something being reheated.")
-  print("\nBefore you reach the door —")
-  print("a guard pushes out of it.")
-  print("Lists sideways. Catches himself on the frame.")
-  print("Doesn't notice he did it.")
-  print("Keys on his belt. Heavy ones. Iron.")
-  print("They catch what little light there is as he disappears back inside.")
-
-  if player.flags.get('companion_mira') or player.flags.get('companion_duo'):
-    print("\nMira watches him for a moment.")
-    print("\n'He seems like the type to overindulge,' she says quietly.")
-    print("'He can barely make it inside without stumbling.'")
-    print("She glances at you.")
-    print("'We could help him along. Get the keys when he's completely off his rocker.'")
-    print("A pause.")
-    print("'Or we could just take the direct approach and lift them now.'")
-    print("'That might raise a few eyebrows don't you think.'")
-    if player.flags.get('companion_duo'):
-      print("\nCaleb glances at you sideways.")
-      print("'But hey — I'm not the raven conqueror like you, so what do I know.'")
-      print("Every word dripping with sarcastic intent.")
-  else:
-    print("\nYou watch him catch himself on the door frame.")
-    print("He doesn't notice he did it.")
-    print("\nThe keys are right there on his belt.")
-    print("You could wait. Buy him a drink or two.")
-    print("Wait until he's completely off his rocker and lift them clean.")
-    print("Or you could just take the direct approach.")
-    print("Might raise a few eyebrows.")
-    print("You almost smile at that.")
-
-  print("\n[1: Help him along. Buy the drinks. Wait him out.]")
-  print("[2: Take the direct approach. Lift them now.]")
-  tavern_choice = input("\nChoose: ").strip()
-
-  print("\n\nThe tavern receives you.")
-  print("Low ceiling. A few people. None of them interested in you.")
-  print("\nThe barkeep is behind the counter.")
-  print("The kind of face that has dried out every variety of trouble")
-  print("and stopped reacting to any of them.")
-  print("She doesn't look up when you come in.")
-  print("\nIn the far corner — the guard.")
-  print("Jacket half-undone. Cup in front of him.")
-  print("Head drooping.")
-
-  if tavern_choice == "2":
-    print("\nYou move toward him. Careful. Slow.")
-    print("You get close.")
-    print("You reach.")
-    print("\nOne eye opens.")
-    print("He doesn't move otherwise. Just looks at you.")
-    print("\n'Buy me a drink first.'")
-    print("He closes the eye again.")
-    print("\nYou take a step back.")
-    print("Even drunk ones have instinct.")
-    tavern_choice = "1"
-
-  if tavern_choice == "1":
-    print("\nYou go to the bar.")
-    print("The barkeep still hasn't looked up.")
-    print("You put four gold on the counter.")
-    if player.gold >= 4:
-      player.gold -= 4
-      print("\nShe looks at it.")
-      print("Then she looks at you.")
-      print("'His tab.' You nod toward the corner.")
-      print("\nShe picks up the four gold.")
-      print("Doesn't say anything.")
-      print("Just pours.")
-      print("\nYou wait.")
-      print("\nHalf an hour. Maybe a little more.")
-      print("You nurse something cheap.")
-      print("Watch the room without watching it.")
-
-      if player.flags.get('companion_mira') and player.flags.get('companion_duo'):
-        print("\nMira finds a seat near the wall. Facing the door.")
-        print("Caleb leans against the wall near the rear.")
-        print("He looks bored. He isn't.")
-      elif player.flags.get('companion_mira'):
-        print("\nMira finds a seat near the wall. Facing the door.")
-        print("Her hands are folded on the table.")
-        print("She could wait longer than this. You can tell.")
-      elif player.flags.get('companion_duo'):
-        print("\nCaleb leans against the wall near the rear.")
-        print("He looks bored. He isn't.")
-
-      print("\nThe guard's head drops fully.")
-      print("The kind of sleep that catches you mid-thought.")
-      print("His breathing changes.")
-      print("His hand goes slack.")
-      print("\nYou move.")
-      print("The keys come free without a sound.")
-      print("You pocket them.")
-      print("You walk out.")
-      player.flags['dungeon_keys'] = True
-      print("\nYou have the keys.")
-    else:
-      print("\nYou don't have four gold.")
-      print("The barkeep still hasn't looked at you.")
-      print("You step back.")
-      print("You'll need another way in.")
-      player.flags['tavern_gold_failed'] = True
+  print("\nAt the far end, the alley opens onto a sunken little court —")
+  print("and there he is.")
+  print("The guard. Your guard. The one with the keys.")
+  print("He shoulders through a low door under a guttering lantern.")
+  print("A tavern. The kind that survives by not being worth robbing.")
+  print("\nThe door swallows him.")
+  print("Faint warmth. Faint noise. The clink of a man settling in")
+  print("for a long appointment with a cup.")
+  print("\nHe'll be there a while.")
+  print("Long enough.")
+  print("You mark the door and pull back up the alley.")
+  player.flags['tavern_marked'] = True
 
 
-  # ── 6. Planning conversation — what we don't know, points to Enforcer office
   print("\n\nOutside. The alley mouth. Evening light going grey.")
   print("You stop.")
 
@@ -1708,8 +1713,8 @@ if __name__ == "__main__":
     print("'We don't know the layout. We don't know the rotation.'")
     print("'And we don't know what we're walking into once we're past the first level.'")
     print("\nMira is quiet for a moment.")
-    print("'The sub-level,' she says.")
-    print("'Whatever's down there — they're not advertising it.'")
+    print("'A door the whole town pretends not to see,' she says.")
+    print("'Whatever's behind it — they're not advertising it.'")
     print("'Which means it matters.'")
     print("\nCaleb nods once. Reluctant. Like agreeing costs him something.")
     print("'We need the transport record. The intake list.'")
@@ -1747,7 +1752,6 @@ if __name__ == "__main__":
   player.flags['enforcer_office_known'] = True
 
 
-  # ── 7. Enforcer office + Dara ─────────────────────────────────────────────
   print("\n\nThe Enforcer office sits at the east end of the square.")
   print("Not hidden. Just unremarkable.")
   print("A building that doesn't want to be noticed and mostly succeeds.")
@@ -1756,7 +1760,7 @@ if __name__ == "__main__":
   moral_path = player.corruption < 4
 
   if moral_path:
-    # Moral path — overhear Dara, she doesn't know you're there
+
     print("\nYou stop outside the window.")
     print("It's open. Not wide. Wide enough.")
     print("\nA voice inside. A woman's voice.")
@@ -1766,7 +1770,7 @@ if __name__ == "__main__":
     print("\n'...Twilight gets the cipher, Ledger sets the key.'")
     print("She says it the way you'd say something you've been told to remember")
     print("and have remembered so many times it's lost all texture.")
-    print("Flat. Functional.")
+    print("Bare. Built for use, not comfort.")
     print("'Two words. That's the whole thing. You'd think they'd make it harder.'")
     print("She flips a page.")
     print("'Twilight. Ledger. In that order. That's the door.'")
@@ -1777,8 +1781,6 @@ if __name__ == "__main__":
     print("You step back from the window.")
     player.flags['cipher_answer_known'] = True
     player.flags['cipher_answer_source'] = 'overheard'
-    player.flags['dara_met'] = True
-    player.flags['dara_path'] = 'moral'
 
     print("\n[You now know the cipher answer: Twilight, Ledger.]")
     print("[She doesn't know you were there.]")
@@ -1796,7 +1798,7 @@ if __name__ == "__main__":
       print("That's all.")
 
   else:
-    # Immoral path — go in, she spots you, romance seed
+
     print("\nYou go in.")
     print("\nShe's behind a desk.")
     print("Late twenties, maybe early thirties — it's hard to tell in this light.")
@@ -1857,20 +1859,34 @@ if __name__ == "__main__":
       print("The silence has a shape to it.")
 
 
-  # ── 8. Cipher puzzle solve — concatenation mechanic, Ledger footnote ──────
   print("\n\nYou're back in the square.")
   print("The stone tablet sits where it always has.")
   print("Twenty-six letters carved in order.")
   print("The question below them.")
 
-  if not player.flags.get('cipher_answer_known'):
+  if player.flags.get('enforcer_aligned'):
+    print("\nYou slow as you pass it.")
+    print("An Enforcer peels off the nearest corner before you've even stopped.")
+    print("'Twilight property.' He doesn't raise his voice.")
+    print("'Recruits keep moving.'")
+    print("\nYou keep moving.")
+    print("Whatever the stone holds — it isn't for people on the payroll.")
+    print("You chose a different reward.")
+  elif not player.flags.get('cipher_answer_known'):
     print("\nYou stand in front of it.")
     print("The answer isn't there yet.")
     print("You can feel the gap where it should be.")
     print("You keep walking.")
   else:
     print("\nThis time you stop differently.")
-    print("You know what it's asking now.")
+    print("\nThe question waits where it has always waited:")
+    print("\n  'What is the order that starts between light and dark")
+    print("   and holds all of the names meant to lift the world?'")
+    print("\nBetween light and dark. Twilight.")
+    print("The names meant to lift the world. A ledger.")
+    print("\nThe words from the office window slot into place")
+    print("like they were cut for this stone all along.")
+    print("Twilight. Ledger. In that order.")
     print("\nThe answer is two words.")
     print("Not the words themselves — the way they fit together.")
     print("The slot at the base is waiting.")
@@ -1956,6 +1972,110 @@ if __name__ == "__main__":
           print("'Hm.' That's all.")
           print("High praise from him.")
 
+
+        print("\nThen you notice the quiet.")
+        print("Not the usual Vardeth quiet. A new one.")
+        print("\nThe nearest stalls have stopped mid-transaction.")
+        print("A woman holding a bundle of cloth she's forgotten she's holding.")
+        print("An old man who has taken his cap off")
+        print("without appearing to know why.")
+        print("Every face turned toward you.")
+        print("\nThat stone has stood in this square longer")
+        print("than anyone alive has been paying tithe beside it.")
+        print("Nobody has ever opened it.")
+        print("You can read that much in their faces.")
+        print("\nAnd at the corners of the square —")
+        print("the Enforcers are no longer bored.")
+        print("Two of them are looking directly at you.")
+        print("One says something to the other")
+        print("without moving his eyes off you.")
+
+        if not player.flags.get('dara_met'):
+          print("\nThe office door at the east end opens.")
+          print("\nA woman steps out. Late twenties, maybe early thirties.")
+          print("Dark hair. The kind of stillness that isn't calm")
+          print("so much as controlled.")
+          print("She crosses the square unhurried —")
+          print("and the Enforcers straighten as she passes them.")
+          print("That tells you something before she says a word.")
+          print("\nShe stops in front of the tablet. Looks at it.")
+          print("Then at you.")
+          print("\n'Eighty years.' She says it like a price.")
+          print("'That stone has been asking its question for eighty years.'")
+          print("'Collectors have tried. Clerks have tried.")
+          print("People significantly more desperate than you have tried.'")
+          print("\nShe studies you the way someone does when they're deciding")
+          print("which version of a situation this is.")
+          print("A problem. Or something more interesting.")
+          print("\n'Dara.' She doesn't offer a hand.")
+          print("'I keep the records you're not supposed to know exist.'")
+          print("\nHer eyes drop to the seam in the stone —")
+          print("the compartment, closed again, but she knows where to look.")
+          print("Then back up to you.")
+          print("\n'Here's my problem.'")
+          print("'That answer is two words. Cipher words.'")
+          print("'Maybe four people in this town know them.")
+          print("I'm one. I know the other three by name.'")
+          print("'And you walked in off a mountain this morning.'")
+          print("\nShe lets that sit.")
+          print("'So. Either you're something that stone")
+          print("has been waiting eighty years for —")
+          print("or somebody talked.'")
+          print("'Which is it?'")
+          print("\n[1: 'The stone told me what it needed.']")
+          print("[2: 'Lucky guess.']")
+          print("[3: Say nothing. Hold her gaze.]")
+          dara_press = input("\nChoose: ").strip()
+
+          if dara_press == "1":
+            print("\nYou say it evenly. Because it's almost true.")
+            print("Something did speak when your hand went in.")
+            print("It just wasn't the stone.")
+            print("\nShe studies you for a long moment.")
+            print("Looking for the lie. Not finding the shape of one.")
+            print("\n'...Huh.' Quiet. Genuinely thrown —")
+            print("and visibly annoyed at being genuinely thrown.")
+            print("'That's either the truth or the best answer")
+            print("I've heard all year.'")
+            print("'I haven't decided which is worse.'")
+            player.flags['dara_intrigued'] = True
+          elif dara_press == "2":
+            print("\n'Lucky.' She repeats it flatly enough to bruise it.")
+            print("'Eighty years of desperate people, and luck")
+            print("picked the stranger with mountain dust on his boots.'")
+            print("'No.'")
+            print("\nShe steps half a pace closer.")
+            print("'Somebody talked. And when I find out who —")
+            print("I'll remember who they talked to.'")
+          else:
+            print("\nYou hold her gaze and give her nothing.")
+            print("\nShe reads the nothing.")
+            print("Files it.")
+            print("\n'Quiet ones.' Almost to herself.")
+            print("'The quiet ones are always worth a page of their own.'")
+
+          player.flags['dara_suspicious'] = True
+          print("\nA beat.")
+          print("'I'd say keep your head down — but you opened the stone,")
+          print("so apparently we're past that.'")
+          print("\nShe glances once at the Enforcers. They unstiffen slightly.")
+          print("'Don't do anything else interesting today.'")
+          print("'I'd hate to have to write you down.'")
+          print("\nShe walks back the way she came.")
+          print("She doesn't look back.")
+          print("She knows you're watching. That's enough for her.")
+          player.flags['dara_met'] = True
+          player.flags['dara_path'] = 'moral'
+          if player.flags.get('companion_mira'):
+            print("\nBeside you, Mira lets out a breath.")
+            print("'That woman scares me,' she says.")
+            print("'And she was being nice.'")
+          elif player.flags.get('companion_duo'):
+            print("\nCaleb watches her go.")
+            print("'Records,' he says quietly.")
+            print("'She just told us where the intake list lives.'")
+            print("'Whether she meant to or not.'")
+
       else:
         print("\nYou don't have the resources.")
         print("You pull back.")
@@ -1968,7 +2088,272 @@ if __name__ == "__main__":
       print("It'll still be here.")
 
 
-  # ── 9. Dungeon door — go in or decline ────────────────────────────────────
+  print("\n\nThe evening still has hours in it.")
+  print("And for the first time since the slope —")
+  print("nothing is chasing you through them.")
+  print("Vardeth, for better or worse, is open.")
+  player.flags['maren_available'] = True
+  from systems.hub import hub
+  from location import Vardeth
+  hub(player, Vardeth)
+
+
+  print("\n\nNight has settled in properly by the time you head back.")
+  print("Down the alley. Past the ledge — the ravens still there,")
+  print("darker shapes against a dark sky. Still watching.")
+  print("\nThe tavern door under the lantern. Warm light in the cracks.")
+  print("If the guard kept to his schedule —")
+  print("he's hours deep by now.")
+
+  print("\n\nThe tavern receives you.")
+  print("Low ceiling, propped by beams that have given up being straight.")
+  print("Candle stubs in dishes. The smell of old smoke,")
+  print("tallow, and something being reheated for the third time.")
+  print("\nLightly peopled. Quieter than a tavern has any right to be.")
+  print("The few patrons sit pressed to the walls —")
+  print("high-legged tables, shoulders nearly touching the stone,")
+  print("backs to nothing.")
+  print("Nobody looks up. Looking up costs something in Vardeth.")
+  print("\nThe man behind the bar is built like a cellar door —")
+  print("wide as two of you, beard going grey in patches,")
+  print("a belly that says the kitchen here feeds at least one person well.")
+  print("In a town of mended clothes and hollow cheeks,")
+  print("that belly is doing a lot of quiet talking.")
+  print("\nHe spots you and his whole face gets involved.")
+  print("'HA! New faces!'")
+  print("It comes out like a small avalanche.")
+  print("'Down MY alley, no less! You lot lost, brave, or thirsty?'")
+  print("He's already reaching for cups.")
+  print("'Don't answer — door's behind you either way, so it better be thirsty.'")
+  if player.flags.get('companion_duo'):
+    print("\nHe squints past you at the two finding a table.")
+    print("'Three, then! Even better.'")
+  print("\n'Name's Dovan. The tavern hasn't got one.")
+  print("Folk just say the tavern, and I've made peace with it.'")
+  print("A laugh that shakes the shelf behind him.")
+  print("'And you are?'")
+  print("\nYou give him a name. Maybe even yours.")
+
+  print("\nA cup cracks against wood in the far corner.")
+  print("'DOVAN! 'Nother!'")
+  print("The guard. Jacket half-undone. Listing in his seat")
+  print("like the room is on a slow tilt only he can feel.")
+  print("The keys hang from a loop on his belt.")
+  print("\nSomething crosses Dovan's face.")
+  print("The guard is too far gone to read it.")
+  print("You aren't.")
+  if player.flags.get('companion_duo') or player.flags.get('companion_mira'):
+    print("Neither is Mira — you catch her catching it too.")
+  print("\nDovan leans across the bar. The big voice drops")
+  print("to something just for this side of the counter.")
+  print("'Every night, that one. End of every shift.'")
+  print("'Drinks half my stock. Pays when he remembers how.'")
+  print("A pause. He polishes a spot that doesn't need it.")
+  print("'If he forgot the way here entirely —'")
+  print("He doesn't finish. He just pours the man's drink.")
+  print("'Let's say I wouldn't cry about it.'")
+
+  if player.flags.get('companion_duo'):
+    print("\nMira leans in, voice under the room's noise.")
+    print("'He's already half gone.' A glance at the corner.")
+    print("'If we sat with him... kept him company...'")
+    print("She doesn't finish it. She doesn't have to.")
+    print("\nCaleb, dry as the firewood:")
+    print("'Kept him company. That's what we're calling it.'")
+    print("'Fine. But you' — a look at you — 'do the reaching.")
+    print("My hands shake around Enforcers. Old habit.'")
+  elif player.flags.get('companion_mira'):
+    print("\nMira leans in, voice under the room's noise.")
+    print("'He's already half gone.'")
+    print("'If we kept him company a while... talked to him...'")
+    print("Her eyes flick to the keys. Back to you.")
+    print("'People stop holding on to things")
+    print("when they think they're among friends.'")
+    print("She says it like someone who learned it the hard way.")
+  else:
+    print("\nYou take the measure of him from the bar.")
+    print("Half gone already. The rest of the way is purchasable.")
+    print("The keys are right there.")
+    print("All it costs is patience. And gold.")
+
+
+  drunk_level = 1
+  talk_count = 0
+  fail_count = 0
+  keys_taken = False
+
+  print("\nYou cross the room. Pull up a stool at his table.")
+  print("He squints at you like you might be two people.")
+  print("'...You buying?'")
+
+  while not keys_taken and player.is_alive():
+    print(f"\n  [He is {'tipsy' if drunk_level == 1 else 'properly drunk' if drunk_level == 2 else 'swaying in his seat' if drunk_level == 3 else 'one breeze from the floor'}.]")
+    print("\n[1: Buy him another round. (1 gold)]")
+    print("[2: Keep him talking.]")
+    print("[3: Go for the keys.]")
+    print("[4: Walk away. Not tonight.]")
+    drink_choice = input("\nChoose: ").strip()
+
+    if drink_choice == "1":
+      if player.gold >= 1:
+        player.gold -= 1
+        if drunk_level < 4:
+          drunk_level += 1
+        print("\nYou signal Dovan. He pours without being told what.")
+        if drunk_level == 2:
+          print("\nThe guard toasts you.")
+          print("Misses his own cup with the toast.")
+          print("Finds it on the second try. Deeply satisfied about it.")
+        elif drunk_level == 3:
+          print("\nHe's explaining something important about doors.")
+          print("'They're all — listen. LISTEN.'")
+          print("'They're all just walls that gave up.'")
+          print("He taps the table like he's said something profound.")
+          print("He has no idea how right he is.")
+        else:
+          print("\nHe attempts to point at you")
+          print("and selects the fireplace instead.")
+          print("'You. You're alright. Not like — like THEM.'")
+          print("He doesn't specify them.")
+          print("The fireplace doesn't ask.")
+      else:
+        print("\nYou reach for gold that isn't there.")
+        print("'Tab's a no, friend.' Dovan, from across the room.")
+        print("Cheerful. Absolute.")
+
+    elif drink_choice == "2":
+      talk_count += 1
+      if talk_count == 1:
+        print("\nYou ask about the work. Vaguely. The way strangers do.")
+        print("\n'The work.' He snorts into his cup.")
+        print("'Nobody wants the under-floor shift.'")
+        print("'Just me an' Berr down there nights.")
+        print("An' Berr don't count.'")
+        print("He laughs at something that isn't funny.")
+        player.flags['guard_intel_thin_shift'] = True
+        player.flags['sub_level_known'] = True
+      elif talk_count == 2:
+        print("\nYou keep him going. It doesn't take much.")
+        print("\n'They sort 'em, y'know.'")
+        print("His voice drops to a secret —")
+        print("at a volume too drunk to keep one.")
+        print("'Ones that can pay go back up.'")
+        print("'Ones that can't...'")
+        print("He waves vaguely at the floor.")
+        print("He doesn't finish.")
+        print("He doesn't need to.")
+        player.flags['guard_intel_sorting'] = True
+        if player.flags.get('companion_mira') or player.flags.get('companion_duo'):
+          print("\nAcross the table, Mira has gone very still.")
+          print("Her hands pressed flat to the wood.")
+          print("Whatever she was hoping —")
+          print("she's hoping it harder now.")
+          print("And dreading it more.")
+      else:
+        print("\nHe's mostly weather and grievances now.")
+        print("The well of useful things has run dry.")
+        print("Only the cup is still producing.")
+
+    elif drink_choice == "3":
+      chance = {1: 25, 2: 50, 3: 75, 4: 95}[drunk_level]
+      roll = random.randint(1, 100)
+      print("\nThe keys dangle from the loop on his belt.")
+      print("Tantalizing. Completely unaware of their future.")
+      print("You let your hand drift off the table edge...")
+      if roll <= chance:
+        print("\nHis head dips toward the cup at exactly the right moment.")
+        print("The loop gives. The keys come free without a sound.")
+        print("Your pocket welcomes them like they were always going to end up there.")
+        keys_taken = True
+      else:
+        fail_count += 1
+        if fail_count == 1:
+          print("\nOne eye opens.")
+          print("He doesn't move otherwise. Just looks at you.")
+          print("\n'Buy me a drink first.'")
+          print("He closes the eye again.")
+          print("\nYou withdraw the hand. Slowly.")
+          print("Even drunk ones have instinct.")
+        else:
+          print("\nHis hand slaps down on the keys. Hard.")
+          print("'OI.' Loud. Too loud.")
+          print("The wall-sitters look up — looking up suddenly affordable.")
+          print("\n'Easy, easy!' Dovan's voice rolls across the room")
+          print("like a barrel over the noise.")
+          print("'He's grabbing his OWN keys, you suspicious wreck.")
+          print("Yours are on your belt, look down.'")
+          print("\nThe guard looks down. Finds his keys.")
+          print("Mollified by the discovery of his own belt.")
+          print("'...S'right,' he mutters. 'S'mine.'")
+          if fail_count == 2:
+            print("\nDovan catches your eye on the way back to the bar.")
+            print("Doesn't wink. Doesn't need to.")
+            print("Get him drunker, the look says. You're embarrassing my tavern.")
+          else:
+            print("\nBut there's no talking past it this time.")
+            print("Something old and trained surfaces through the drink.")
+            print("His chair goes over backwards. He's up —")
+            print("swaying, red-eyed, and absolutely certain now.")
+            print("\n'THIEF.'")
+            print("The wall-sitters are already filing out the door.")
+            print("They know what comes next better than you do.")
+            print("\n'NOT THE TABLES!' Dovan, resigned, from somewhere behind the bar.")
+            print("\nThe guard swings first.")
+            drunk_guard = Enforcer("Drunk Dungeon Guard")
+            simple_combat(player, drunk_guard)
+            if player.is_alive():
+              print("\nHe goes down among the stools.")
+              print("Breathing. Loudly. The drink claiming")
+              print("whatever the fight left behind.")
+              print("\nThe keys come off his belt without protest now.")
+              player.flags['dungeon_keys'] = True
+              player.flags['guard_brawled'] = True
+              keys_taken = True
+              print("\nDovan surveys the wreckage. Rights one chair.")
+              print("'He swung first.' He says it to the empty room —")
+              print("rehearsing it. Deciding it's even true.")
+              print("'But you understand you drink somewhere else")
+              print("until he forgets your face.'")
+              print("A beat.")
+              print("'Won't take long. He forgets his own.'")
+            else:
+              print("\nDarkness.")
+              print("The Path ends here.")
+              print("Beaten by a man who couldn't point at you an hour ago.")
+              exit()
+
+    elif drink_choice == "4":
+      print("\nYou push back from the table.")
+      print("Not tonight. Not like this.")
+      print("'Wha— where's the party going?' The guard, to the room generally.")
+      print("The room declines to answer.")
+      break
+
+  if keys_taken:
+    print("\nYou settle back like nothing happened.")
+    print("Finish your drink at a civilian pace.")
+    print("Then you rise, nod to Dovan, and walk out.")
+    print("\nThe night air takes you back.")
+    print("The keys are a quiet new weight against your hip.")
+    player.flags['dungeon_keys'] = True
+    if player.flags.get('companion_duo'):
+      print("\nOutside, Caleb exhales something close to approval.")
+      print("'Didn't think you had the hands for it.'")
+      print("From him, that's a parade.")
+    elif player.flags.get('companion_mira'):
+      print("\nOutside, Mira hugs her elbows against the cold.")
+      print("But she's almost smiling.")
+      print("'One step closer,' she says.")
+      print("To Sera. She doesn't have to say it.")
+
+
+  print("\n\nThe night stretches ahead.")
+  print("Vardeth sleeps badly — but it sleeps.")
+  print("What you do with the dark is up to you.")
+  player.flags['vardeth_story_done'] = True
+  hub(player, Vardeth)
+
+
   print("\n\nBack across the square.")
   print("To the far wall.")
   print("To the door set flush with the stone.")
@@ -2027,7 +2412,7 @@ if __name__ == "__main__":
     player.flags['dungeon_declined'] = True
 
   else:
-    # Enter dungeon
+
     if player.flags.get('dungeon_keys'):
       print("\nYou put the key in the lock.")
       print("It turns clean.")

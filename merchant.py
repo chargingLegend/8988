@@ -230,7 +230,7 @@ class Maren(Merchant):
     print(f"\nThe door bursts open. Two Enforcers fill the frame.")
     print(f"'Pathwalker. Step away from the merchant.'")
     print(f"'Or don't.' The batons crackle.")
-    from entities.humanoid import Enforcer
+    from enemy import Enforcer
     enforcer1 = Enforcer("Town Enforcer")
     enforcer2 = Enforcer("Town Enforcer")
     simple_combat(player, enforcer1)

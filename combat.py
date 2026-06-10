@@ -12,9 +12,9 @@ def _dispatch_ability(player, enemy):
   print(f"Manabda: {player.manabda}/8")
   chosen = input("Which ability?: ").strip().lower()
 
-  # abilities that need a list of targets
+
   multi_target = ["map_fire", "surge", "eclipse", "wild_conjure"]
-  # abilities that need no target (self or free-form)
+
   no_target = ["summon_elemental", "conjure_supply", "amplify",
                "transmute_vitae", "transmute_arcana"]
 
@@ -65,21 +65,19 @@ def _tick_entity_cooldowns(entity):
 def simple_combat(player, enemy):
   print(f"\n=== COMBAT: {player.name} vs {enemy.name} ===")
 
-  # ── companion init ────────────────────────────────────────
+
   mira = None
   if hasattr(player, 'flags') and player.flags.get('companion_mira'):
-    from entities.humanoid import FrightenedWoman
+    from enemy import FrightenedWoman
     mira = FrightenedWoman()
     mira.reset_passive()
     print(f"\nMira stands back. Watching. Ready.")
     print(f"Mira: {mira.hp}/{mira.max_hp} HP")
 
-  # ── additional companions initialize here ─────────────────
-
 
   while player.is_alive() and enemy.is_alive():
 
-    # ── status ticks ─────────────────────────────────────────
+
     player_msgs = player.tick_status_effects()
     if player_msgs:
       print(player_msgs)
@@ -91,22 +89,22 @@ def simple_combat(player, enemy):
     if not enemy.is_alive():
       break
 
-    # ── spell cooldown ticks ──────────────────────────────────
+
     if hasattr(player, 'tick_spell_cooldowns'):
       player.tick_spell_cooldowns()
     _tick_entity_cooldowns(enemy)
 
-    # ── skip turn check (Slowed, Shattered, etc) ──────────────
+
     if getattr(enemy, 'skip_turn', False):
       enemy.skip_turn = False
       print(f"\n{enemy.name} cannot act this turn.")
       continue
 
-    # ── companion passives ────────────────────────────────────
+
     if mira and mira.is_alive():
       mira.passive_check(player)
 
-    # ── status display ────────────────────────────────────────
+
     print(f"\n{player}")
     print(f"{enemy}")
     print(f"Spells: {player.spells} | Mana: {player.mana}/{player.max_mana}")
@@ -115,7 +113,7 @@ def simple_combat(player, enemy):
     if mira and mira.is_alive():
       print(f"Mira: {mira.hp}/{mira.max_hp} HP | Type 'mira' to ask for healing.")
 
-    # ── active status effects on player ──────────────────────
+
     if player.status_effects:
       active = [e.name for e in player.status_effects]
       print(f"Status: {', '.join(active)}")
@@ -125,13 +123,13 @@ def simple_combat(player, enemy):
     else:
       action = input("\nSpell name, 'ability', or 'flee': ").strip().lower()
 
-    # ── flee ──────────────────────────────────────────────────
+
     if action == 'flee':
       print(f"{player.name} flees.")
       print(f"The Path teaches cowardice has a price: no exp gained.")
       break
 
-    # ── mira ──────────────────────────────────────────────────
+
     if action == 'mira':
       if mira and mira.is_alive():
         mira.heal_choice(player)
@@ -139,7 +137,7 @@ def simple_combat(player, enemy):
         print(f"\nShe isn't here.")
       continue
 
-    # ── ability dispatcher ────────────────────────────────────
+
     if action == 'ability':
       ability_used = _dispatch_ability(player, enemy)
       if ability_used and enemy.is_alive():
@@ -148,7 +146,7 @@ def simple_combat(player, enemy):
           _check_charge_interrupt(player, dmg)
       continue
 
-    # ── spell cast ────────────────────────────────────────────
+
     spell_hit = player.cast_mana(action, enemy)
 
     if not enemy.is_alive():
@@ -181,7 +179,7 @@ def simple_combat(player, enemy):
 
     reacted = False
 
-    # ── reaction items ────────────────────────────────────────
+
     if player.is_alive() and player.hp <= player.max_hp // 4 and not reacted:
       if player.inventory.has_item("Except Vial"):
         print(f"\n{player.name} is critically wounded!")
@@ -218,14 +216,14 @@ def simple_combat(player, enemy):
             reacted = True
           break
 
-    # ── death check with Finally Flask ───────────────────────
+
     if not player.is_alive():
       if player.inventory.has_item("Finally Flask"):
         flask = player.inventory.get_item("Finally Flask")
         flask.use(player)
         player.inventory.remove("Finally Flask")
 
-  # ── post combat companion report ──────────────────────────
+
   if mira and mira.is_alive():
     print(f"\nMira: {mira.hp}/{mira.max_hp} HP after combat.")
     if mira.hp <= 20:
@@ -233,7 +231,7 @@ def simple_combat(player, enemy):
       print(f"'I'm alright.' She says it again.")
       print(f"You're not sure either of you believes it.")
 
-  # ── post combat rewards ───────────────────────────────────
+
   if not enemy.is_alive():
     if enemy.gold_reward:
       player.gold = getattr(player, 'gold', 0) + enemy.gold_reward
