@@ -2,6 +2,8 @@ def hub(player, location):
   from systems.grind import grind
   from combat import simple_combat
   from spawn import EnemySpawner
+  from systems.checkpoint import load_checkpoint, apply_checkpoint, checkpoint_exists
+
 
   location_key = location.__name__.lower()
   grind_cap = location.level_cap + 2

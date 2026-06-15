@@ -1,10 +1,29 @@
 import random
+import builtins
 from wizard import Wizard
 from combat import simple_combat
 from enemy import RavenSwarm, DesperateTraveler, Enforcer, FrightenedWoman
 from items import (HPPotion, ManaPotion, ManabdaPotion, PassRune,
                    ExceptVial, FinallyFlask, Cloak, Staff, Rod, Scepter)
 from merchant import Maren
+from systems.checkpoint import save_checkpoint
+
+_lines_since_pause = 0
+PAGE_HEIGHT = 18
+
+def print(*args, **kwargs):
+  global _lines_since_pause
+  builtins.print(*args, **kwargs)
+  text = " ".join(str(a) for a in args)
+  _lines_since_pause += text.count("\n") + 1
+  if _lines_since_pause >= PAGE_HEIGHT:
+    builtins.input("\n  [ press Enter ▼ ]")
+    _lines_since_pause = 0
+
+def input(prompt=""):
+  global _lines_since_pause
+  _lines_since_pause = 0
+  return builtins.input(prompt)
 
 
 SPELL_DESCRIPTIONS = {
@@ -2432,11 +2451,12 @@ if __name__ == "__main__":
           self.flame_resistance = 15
           self.hp = 30
           self.is_object = True
-          def add_status(self, s): pass
-          def take_damage(self, dmg, dtype):
-            self.hp -= dmg
-        add_status = add_status
-        take_damage = take_damage
+
+        def add_status(self, s):
+          pass
+
+        def take_damage(self, dmg, dtype):
+          self.hp -= dmg
 
       hinge = DungeonHinge()
       result = player.pyromancy_burn(hinge)

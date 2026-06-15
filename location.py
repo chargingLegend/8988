@@ -13,6 +13,15 @@ class Town(Location):
   grind_available = False
 
 
+
+class Dungeon(Location):
+  grind_available = False
+  boss = None
+  enemy_table = []
+  level_cap = 0
+
+
+
 class Vardeth(Town):
   level_cap = 4
   boss = "Enforcer_Gang_Sergeant"
@@ -23,6 +32,20 @@ class Vardeth(Town):
   vendors = ["Maren"]
   requires_tithe = True
   grind_available = True
+
+
+
+
+class VardethDungeon(Dungeon):
+  level_cap = 3
+  boss = None
+  enemy_table = []
+  common = ["rusted_chain", "damp_straw", "scratched_stone"]
+  uncommon = []
+  rare = []
+
+
+Vardeth.dungeon = VardethDungeon
 
 
 class FreeHollow(Town):
