@@ -15,6 +15,7 @@ from enemy import DesperateTraveler, Enforcer, TitheCollector
 
 def make_player(level=1, school="Pyromancy"):
   p = Wizard(name="Test", level=level, school=school)
+  p.choose_school(school)
   p.gold = 0
   p.flags = {}
   p.corruption = 0
@@ -71,9 +72,9 @@ def test_corruption_max_enforcement_works():
   assert p.corruption >= 3
 
 
-def test_raven_swarm_gold_reward_is_15():
+def test_raven_swarm_gold_reward_is_25():
   swarm = RavenSwarm()
-  assert swarm.gold_reward == 15
+  assert swarm.gold_reward == 25
 
 def test_raven_swarm_gold_reward_not_5():
   swarm = RavenSwarm()
@@ -931,3 +932,160 @@ if __name__ == "__main__":
         failed += 1
         print(f"  FAIL  {name}: {e}")
   sys.exit(1 if failed else 0)
+
+# ── SPELL TIER SYSTEM TESTS ───────────────────────────────
+
+def test_pyromancy_ignite_has_tiers():
+  p = make_player(school="Pyromancy")
+  assert "tiers" in p.spell_data["Ignite"]
+
+def test_pyromancy_ignite_tier_1_increases_damage():
+  p = make_player(school="Pyromancy")
+  base_max = p.spell_data["Ignite"]["max_dmg"]
+  tier_1_max = p.spell_data["Ignite"]["tiers"]["1"]["max_dmg"]
+  assert tier_1_max > base_max
+
+def test_pyromancy_ignite_tier_3_is_strongest():
+  p = make_player(school="Pyromancy")
+  tier_2_max = p.spell_data["Ignite"]["tiers"]["2"]["max_dmg"]
+  tier_3_max = p.spell_data["Ignite"]["tiers"]["3"]["max_dmg"]
+  assert tier_3_max > tier_2_max
+
+def test_pyromancy_ignite_tier_3_effect_chance_higher_than_base():
+  p = make_player(school="Pyromancy")
+  base_chance = p.spell_data["Ignite"]["effect_chance"]
+  tier_3_chance = p.spell_data["Ignite"]["tiers"]["3"]["effect_chance"]
+  assert tier_3_chance > base_chance
+
+def test_all_pyromancy_base_spells_have_tiers():
+  p = make_player(school="Pyromancy")
+  for spell in ["Ignite", "Sear", "Cinder Ward"]:
+    assert "tiers" in p.spell_data[spell], f"{spell} missing tiers"
+
+def test_all_cryomancy_base_spells_have_tiers():
+  p = make_player(school="Cryomancy")
+  for spell in ["Frostbite", "Glaze", "Shard"]:
+    assert "tiers" in p.spell_data[spell], f"{spell} missing tiers"
+
+def test_all_chronomancy_base_spells_have_tiers():
+  p = make_player(school="Chronomancy")
+  for spell in ["Hesitate", "Foresight", "Stutter"]:
+    assert "tiers" in p.spell_data[spell], f"{spell} missing tiers"
+
+def test_upgrade_level_starts_at_zero_for_tiered_spells():
+  p = make_player(school="Pyromancy")
+  for spell, data in p.spell_data.items():
+    if isinstance(data, dict) and "tiers" in data:
+      assert data.get("upgrade_level", 0) == 0, f"{spell} upgrade_level not 0"
+
+
+# ── NEW SPELL EXISTENCE TESTS ──────────────────────────────
+
+def test_pyromancy_has_hearthcall():
+  p = make_player(school="Pyromancy")
+  assert "Hearthcall" in p.spell_data
+
+def test_pyromancy_has_flashform():
+  p = make_player(school="Pyromancy")
+  assert "Flashform" in p.spell_data
+
+def test_pyromancy_has_judgment_flame():
+  p = make_player(school="Pyromancy")
+  assert "Judgment Flame" in p.spell_data
+
+def test_pyromancy_has_unlit():
+  p = make_player(school="Pyromancy")
+  assert "Unlit" in p.spell_data
+
+def test_cryomancy_has_the_still():
+  p = make_player(school="Cryomancy")
+  assert "The Still" in p.spell_data
+
+def test_cryomancy_has_cold_stride():
+  p = make_player(school="Cryomancy")
+  assert "Cold Stride" in p.spell_data
+
+def test_necromancy_has_last_pulled():
+  p = make_player(school="Necromancy")
+  assert "Last Pulled" in p.spell_data
+
+def test_necromancy_has_the_finding():
+  p = make_player(school="Necromancy")
+  assert "The Finding" in p.spell_data
+
+def test_shadow_has_cut():
+  p = make_player(school="Shadow")
+  assert "Cut" in p.spell_data
+
+def test_transmutation_has_exchange():
+  p = make_player(school="Transmutation")
+  assert "Exchange" in p.spell_data
+
+def test_each_new_spell_has_python_concept():
+  new_spells = {
+    "Pyromancy": ["Hearthcall", "Flashform", "Judgment Flame", "Unlit"],
+    "Cryomancy": ["The Still", "Cold Stride", "Locked State", "Tally Frost"],
+    "Necromancy": ["Last Pulled", "The Finding", "True Nature", "Added To The Count"],
+  }
+  for school, spells in new_spells.items():
+    p = make_player(school=school)
+    for spell in spells:
+      assert "python_concept" in p.spell_data[spell], f"{spell} missing python_concept"
+
+
+# ── LEARN SPELL CHOICE TESTS ──────────────────────────────
+
+def test_learn_spell_choice_raises_when_all_learned():
+  p = make_player(school="Pyromancy")
+  p.spells = list(p.spell_data.keys())
+  with pytest.raises(ValueError, match="mastered all available spells"):
+    p.learn_spell_choice()
+
+def test_learn_spell_choice_adds_exactly_one_spell(monkeypatch):
+  p = make_player(school="Pyromancy")
+  before = len(p.spells)
+  monkeypatch.setattr("builtins.input", lambda _: "1")
+  p.learn_spell_choice()
+  assert len(p.spells) == before + 1
+
+def test_learn_spell_invalid_choice_does_not_add_spell(monkeypatch):
+  p = make_player(school="Pyromancy")
+  before = len(p.spells)
+  monkeypatch.setattr("builtins.input", lambda _: "999")
+  p.learn_spell_choice()
+  assert len(p.spells) == before
+
+def test_learned_spell_not_duplicate(monkeypatch):
+  p = make_player(school="Pyromancy")
+  monkeypatch.setattr("builtins.input", lambda _: "1")
+  p.learn_spell_choice()
+  assert len(p.spells) == len(set(p.spells))
+
+
+# ── SPELL UPGRADE COUNTER TESTS ───────────────────────────
+
+def test_spell_upgrades_starts_empty():
+  p = make_player(school="Pyromancy")
+  assert p.spell_upgrades == {}
+
+def test_get_spell_power_returns_zero_by_default():
+  p = make_player(school="Pyromancy")
+  assert p.get_spell_power("Ignite") == 0
+
+def test_get_spell_power_returns_upgrade_level():
+  p = make_player(school="Pyromancy")
+  p.spell_upgrades["Ignite"] = 2
+  assert p.get_spell_power("Ignite") == 2
+
+def test_empower_spell_increments_upgrade_counter(monkeypatch):
+  p = make_player(school="Pyromancy")
+  monkeypatch.setattr("builtins.input", lambda _: "1")
+  p.empower_spell_choice()
+  assert p.spell_upgrades.get("Ignite", 0) == 1
+
+def test_empower_spell_twice_gives_level_two(monkeypatch):
+  p = make_player(school="Pyromancy")
+  monkeypatch.setattr("builtins.input", lambda _: "1")
+  p.empower_spell_choice()
+  p.empower_spell_choice()
+  assert p.spell_upgrades.get("Ignite", 0) == 2

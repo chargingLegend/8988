@@ -109,7 +109,7 @@ class Wizard:
     print("2. Expand Mind: +5 Max Mana")
     print("3. Empower Ability: strengthen a pythonic ability")
     print("4. Empower Spell: strengthen an existing spell")
-    print("5. Learn Spell: learn 1 of 2 non-starter spells for your school")
+    print("5. Learn Spell: learn a new spell for your school")
     choice = input("Choice 1-5: ")
     if choice == "1":
       self.add_hp_bonus()
@@ -120,7 +120,11 @@ class Wizard:
     elif choice == "4":
       self.empower_spell_choice()
     elif choice == "5":
-      self.learn_spell_choice()
+      try:
+        self.learn_spell_choice()
+      except ValueError as e:
+        print(f"\n{e}")
+        self.level_up_choice()
     else:
       print("No choice made. Power dissipates.")
 
@@ -174,19 +178,19 @@ class Wizard:
       return
     available = [s for s in self.spell_data.keys() if s not in self.spells]
     if not available:
-      print("You've learned all spells for your school. Taking +5 HP instead.")
-      self.add_hp_bonus(5)
-      return
+      raise ValueError("You have mastered all available spells. Choose something else.")
     print("Choose a spell to learn:")
-    for i, spell in enumerate(available[:2]):
+    for i, spell in enumerate(available):
       print(f"{i+1}. {spell}")
     choice = input("Spell #: ")
     try:
       idx = int(choice) - 1
+      if idx < 0 or idx >= len(available):
+        raise IndexError
       spell = available[idx]
       self.spells.append(spell)
       print(f"Learned {spell}!")
-    except:
+    except (ValueError, IndexError):
       print("Invalid choice. Power dissipates.")
 
   def get_spell_power(self, spell_name: str) -> int:
@@ -263,8 +267,18 @@ class Wizard:
         return False
 
     power = self.get_spell_power(spell_name)
-    min_dmg += power
-    max_dmg += power * 2
+
+    # ── apply tier bonuses if tiers exist ────────────────────
+    tiers = spell_entry.get("tiers", {})
+    tier_data = tiers.get(str(power), {}) if power > 0 else {}
+    if tier_data:
+      min_dmg = tier_data.get("min_dmg", min_dmg)
+      max_dmg = tier_data.get("max_dmg", max_dmg)
+      effect = tier_data.get("effect", effect)
+      effect_chance = tier_data.get("effect_chance", effect_chance)
+    else:
+      min_dmg += power
+      max_dmg += power * 2
 
     # ── zero damage utility spells ────────────────────────────
     if min_dmg == 0 and max_dmg == 0:
@@ -310,20 +324,27 @@ class Wizard:
     concept = spell_entry.get("python_concept", "")
     power = self.get_spell_power(spell_name)
 
+    # ── resolve tier data if available ───────────────────────
+    tiers = spell_entry.get("tiers", {})
+    tier = tiers.get(str(power), {}) if power > 0 else {}
+
+    def td(key, default):
+      return tier.get(key, spell_entry.get(key, default))
+
     # ── SMELT — try/except ────────────────────────────────────
     if spell_name == "Smelt":
       resistance = getattr(target, 'fire_resistance', 0)
-      threshold = spell_entry["resist_threshold"]
+      threshold = td("resist_threshold", 10)
       print(f"{self.name} weaves: 'Smelt' Lvl{power}!")
       print(f"# try:")
       if resistance <= threshold:
         print(f"  heat pours into {target.name}. The weave holds.")
-        dmg = random.randint(spell_entry["min_dmg"], spell_entry["max_dmg"]) + power
+        dmg = random.randint(td("min_dmg", 5), td("max_dmg", 12))
         target.take_damage(dmg, "fire")
-        if random.random() < spell_entry.get("effect_chance", 0.6):
+        if random.random() < td("effect_chance", 0.6):
           self._apply_spell_effect("Burn", target, spell_name)
       else:
-        strip = spell_entry.get("strip_amount", 5) + power
+        strip = td("strip_amount", 5)
         print(f"# except FireResistance:")
         print(f"  resistance too high — stripping {strip} fire resistance instead.")
         target.fire_resistance = max(0, resistance - strip)
@@ -333,52 +354,61 @@ class Wizard:
     # ── FLASHPOINT — bool ─────────────────────────────────────
     if spell_name == "Flashpoint":
       resistance = getattr(target, 'fire_resistance', 0)
-      threshold = spell_entry["resist_threshold"]
+      threshold = td("resist_threshold", 10)
       vulnerable = resistance < threshold
       print(f"{self.name} weaves: 'Flashpoint' Lvl{power}!")
       print(f"# vulnerable = {target.name}.fire_resistance < {threshold}")
       print(f"# vulnerable = {vulnerable}")
       if vulnerable:
         print(f"# if vulnerable: True — ignition condition met.")
-        dmg = random.randint(spell_entry["min_dmg"], spell_entry["max_dmg"]) + (power * 2)
+        dmg = random.randint(td("min_dmg", 8), td("max_dmg", 18))
         print(spell_entry["desc"].format(target=target.name))
         target.take_damage(dmg, "fire")
         self._apply_spell_effect("Combusting", target, spell_name)
       else:
         print(f"# if vulnerable: False — condition not met. Flashpoint fizzles.")
         print(f"{target.name} has too much fire resistance. The spark finds no purchase.")
-        self.mana += 1  # refund since fizzle
+        self.mana += 1
       return True
 
     # ── GLACIAL GRIND — while/break ───────────────────────────
     if spell_name == "Glacial Grind":
+      break_threshold = 0.25 if power >= 3 else 0.5
       print(f"{self.name} weaves: 'Glacial Grind' Lvl{power}!")
-      print(f"# while {target.name}.hp > {target.name}.max_hp * 0.5:")
+      print(f"# while {target.name}.hp > {target.name}.max_hp * {break_threshold}:")
       hits = 0
-      base_dmg = random.randint(spell_entry["min_dmg"], spell_entry["max_dmg"]) + power
-      while target.hp > target.max_hp * 0.5 and target.is_alive():
+      base_dmg = random.randint(td("min_dmg", 3), td("max_dmg", 6))
+      while target.hp > target.max_hp * break_threshold and target.is_alive():
         hits += 1
         print(f"  the cold grinds. Hit {hits}.")
         target.take_damage(base_dmg, "cold")
         if hits >= 4:
           break
-      if target.hp <= target.max_hp * 0.5:
-        print(f"# break — {target.name} dropped below half HP. The loop ends.")
+      if target.hp <= target.max_hp * break_threshold:
+        print(f"# break — {target.name} dropped below threshold. The loop ends.")
       if hits == 4:
         print(f"# break — max iterations reached.")
-      if random.random() < spell_entry.get("effect_chance", 0.3):
+      if random.random() < td("effect_chance", 0.3):
         self._apply_spell_effect("Frostbitten", target, spell_name)
       return True
 
     # ── NULLFROST — None ──────────────────────────────────────
     if spell_name == "Nullfrost":
+      nullify_count = 2 if power >= 2 else 1
+      nullify_all = power >= 3
       print(f"{self.name} weaves: 'Nullfrost' Lvl{power}!")
       if target.status_effects:
-        effect_to_null = target.status_effects[0]
-        print(f"# active_effect = {effect_to_null.name}")
-        print(f"# active_effect = None")
-        target.status_effects.remove(effect_to_null)
-        print(f"  {effect_to_null.name} on {target.name} set to None. It dissolves.")
+        if nullify_all:
+          count = len(target.status_effects)
+          target.status_effects.clear()
+          print(f"# all active effects set to None. {count} effect(s) dissolved.")
+        else:
+          for _ in range(min(nullify_count, len(target.status_effects))):
+            effect_to_null = target.status_effects[0]
+            print(f"# active_effect = {effect_to_null.name}")
+            print(f"# active_effect = None")
+            target.status_effects.remove(effect_to_null)
+            print(f"  {effect_to_null.name} on {target.name} set to None. It dissolves.")
       else:
         print(f"# active_effect = None  ← already None")
         print(f"  nothing to nullify. The frost returns None.")
@@ -387,26 +417,19 @@ class Wizard:
 
     # ── INTERVAL — range() ────────────────────────────────────
     if spell_name == "Interval":
-      if power >= 2:
-        hit_range = spell_entry["upgrade_2_range"]
-      elif power >= 1:
-        hit_range = spell_entry["upgrade_1_range"]
-      else:
-        hit_range = spell_entry["hit_range"]
-
+      hit_range = td("hit_range", (1, 4))
       available_mana = self.mana
       max_hits = min(hit_range[1] - 1, available_mana)
       if max_hits < hit_range[0]:
-        print(f"Not enough mana for even one Interval hit. Need {hit_range[0]}, have {available_mana}.")
+        print(f"Not enough mana for even one Interval hit.")
         self.mana += 1
         return False
-
       print(f"{self.name} weaves: 'Interval' Lvl{power}!")
       print(f"# for beat in range({hit_range[0]}, {min(hit_range[1], max_hits + 1)}):")
       total_dmg = 0
       hit_count = random.randint(hit_range[0], min(hit_range[1] - 1, max_hits))
       for beat in range(hit_count):
-        dmg = random.randint(spell_entry["min_dmg"], spell_entry["max_dmg"]) + power
+        dmg = random.randint(td("min_dmg", 2), td("max_dmg", 5))
         print(f"  beat {beat + 1} — {dmg} time damage.")
         target.take_damage(dmg, "time")
         total_dmg += dmg
@@ -431,11 +454,11 @@ class Wizard:
         return False
       extra_cost = 1
       if self.mana < extra_cost:
-        print(f"  Not enough mana to recur. Need {extra_cost + 1} total.")
+        print(f"  Not enough mana to recur.")
         self.mana += 1
         return False
       self.mana -= extra_cost
-      repeat_count = spell_entry["repeat_count"]
+      repeat_count = td("repeat_count", 3)
       print(f"{self.name} weaves: 'Recurrence' Lvl{power}!")
       print(f"# for iteration in range({repeat_count}):")
       for i in range(repeat_count):
@@ -460,8 +483,11 @@ class Wizard:
         print(f"  The grave gives nothing back.")
         return True
       revived = dead_list.pop()
-      revived_hp = int(revived.max_hp * spell_entry.get("revive_hp_percent", 0.3))
+      revive_pct = td("revive_hp_percent", 0.3)
+      revived_hp = int(revived.max_hp * revive_pct)
       revived.hp = revived_hp
+      if td("revived_atk_bonus", 0):
+        revived.atk += td("revived_atk_bonus", 0)
       if not hasattr(self, 'minions'):
         self.minions = []
       self.minions.append(revived)
@@ -474,33 +500,34 @@ class Wizard:
       print(f"{self.name} weaves: 'Erasure' Lvl{power}!")
       buffs = [e for e in target.status_effects
                if hasattr(e, 'is_buff') and e.is_buff]
+      delete_count = 2 if power >= 2 else 1
+      delete_all = power >= 3
       if not buffs:
         print(f"# del target.active_buff — KeyError: no buff found.")
         print(f"  Nothing to delete. The spell wastes.")
         return True
-      to_delete = buffs[0]
-      print(f"# del {target.name}.{to_delete.name}")
-      target.status_effects.remove(to_delete)
-      print(f"  {to_delete.name} on {target.name} — deleted. Not nulled. Gone.")
+      if delete_all:
+        count = len(buffs)
+        for b in buffs:
+          target.status_effects.remove(b)
+        print(f"  All {count} buff(s) on {target.name} — deleted. Gone.")
+      else:
+        for b in buffs[:delete_count]:
+          print(f"# del {target.name}.{b.name}")
+          target.status_effects.remove(b)
+          print(f"  {b.name} on {target.name} — deleted. Not nulled. Gone.")
       return True
 
     # ── MAGNITUDE — integer operations ───────────────────────
     if spell_name == "Magnitude":
       if not hasattr(self, 'magnitude_active'):
         self.magnitude_active = 0
-      if power >= 2:
-        duration = spell_entry["upgrade_2_duration"]
-        ceiling = spell_entry["upgrade_2_multiplier_ceiling"]
-      elif power >= 1:
-        duration = spell_entry["upgrade_1_duration"]
-        ceiling = 3
-      else:
-        duration = spell_entry["duration"]
-        ceiling = 3
-      base_dmg = spell_entry["base_dmg"]
+      duration = td("duration", 3)
+      base_dmg = td("base_dmg", 6)
+      ceiling = 4 if power >= 2 else 3
       hp_ratio = self.max_hp / max(self.hp, 1)
       multiplier = min(int(hp_ratio), ceiling)
-      dmg = int(multiplier * base_dmg) + power
+      dmg = int(multiplier * base_dmg)
       print(f"{self.name} weaves: 'Magnitude' Lvl{power}!")
       print(f"# multiplier = int(max_hp / hp) = int({self.max_hp}/{self.hp}) = {int(hp_ratio)}")
       print(f"# dmg = {multiplier} * {base_dmg} = {dmg}")
@@ -514,6 +541,8 @@ class Wizard:
     if spell_name == "Surge Stack":
       if not hasattr(self, 'surge_stacks'):
         self.surge_stacks = 0
+      stack_bonus = td("stack_bonus", 2)
+      max_stacks = td("max_stacks", 5)
       ally_has_status = any(
         hasattr(a, 'status_effects') and a.status_effects
         for a in getattr(self, 'active_allies', [])
@@ -524,13 +553,13 @@ class Wizard:
         print(f"  The stack has no fuel. It holds at zero.")
         return True
       self.surge_stacks = min(
-        self.surge_stacks + spell_entry["stack_bonus"],
-        spell_entry["max_stacks"] * spell_entry["stack_bonus"]
+        self.surge_stacks + stack_bonus,
+        max_stacks * stack_bonus
       )
-      dmg = random.randint(spell_entry["min_dmg"], spell_entry["max_dmg"])
-      total = dmg + self.surge_stacks + power
+      dmg = random.randint(td("min_dmg", 2), td("max_dmg", 4))
+      total = dmg + self.surge_stacks
       print(f"{self.name} weaves: 'Surge Stack' Lvl{power}!")
-      print(f"# surge_stacks += {spell_entry['stack_bonus']}")
+      print(f"# surge_stacks += {stack_bonus}")
       print(f"# surge_stacks = {self.surge_stacks}")
       print(f"# dmg = base({dmg}) + stack({self.surge_stacks}) = {total}")
       print(f"  the value compounds. {total} force damage.")
