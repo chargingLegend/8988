@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="835b3a01-da1c-4899-ae46-58ecf35d64ec" name="Changes" comment="-main.py made more revisions to story logic">
+    <list default="true" id="835b3a01-da1c-4899-ae46-58ecf35d64ec" name="Changes" comment="updated spell upgrades and spell choices to upgrade too as well as wrote 22 tests to ensure everything meshed well.">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -31,6 +31,9 @@
     &quot;accountId&quot;: &quot;1cb6f4b9-b674-4782-ac98-a6a024656669&quot;
   }
 }</component>
+  <component name="HighlightingSettingsPerFile">
+    <setting file="file://$PROJECT_DIR$/location.py" root0="FORCE_HIGHLIGHTING" />
+  </component>
   <component name="ProjectColorInfo">{
   &quot;customColor&quot;: &quot;&quot;,
   &quot;associatedIndex&quot;: 0
@@ -53,10 +56,10 @@
     &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
     &quot;git-widget-placeholder&quot;: &quot;master&quot;,
     &quot;last_opened_file_path&quot;: &quot;C:/Users/mattr/PycharmProjects/PythonProject4&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;com.jetbrains.python.configuration.PyIntegratedToolsModulesConfigurable&quot;
+    &quot;settings.editor.selected.configurable&quot;: &quot;com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable&quot;
   }
 }</component>
-  <component name="RunManager" selected="Python.main">
+  <component name="RunManager" selected="Python tests.pytest in test_pythonproject4.py">
     <configuration name="main" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="PythonProject4" />
       <option name="ENV_FILES" value="" />
@@ -66,8 +69,9 @@
         <env name="PYTHONUNBUFFERED" value="1" />
       </envs>
       <option name="SDK_HOME" value="" />
+      <option name="SDK_NAME" value="Python 3.14 (PythonProject4)" />
       <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
-      <option name="IS_MODULE_SDK" value="true" />
+      <option name="IS_MODULE_SDK" value="false" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <option name="RUN_TOOL" value="" />
@@ -98,10 +102,14 @@
       <option name="_new_targetType" value="&quot;PATH&quot;" />
       <method v="2" />
     </configuration>
+    <list>
+      <item itemvalue="Python.main" />
+      <item itemvalue="Python tests.pytest in test_pythonproject4.py" />
+    </list>
     <recent_temporary>
       <list>
-        <item itemvalue="Python.main" />
         <item itemvalue="Python tests.pytest in test_pythonproject4.py" />
+        <item itemvalue="Python.main" />
       </list>
     </recent_temporary>
   </component>
@@ -200,7 +208,31 @@
       <option name="project" value="LOCAL" />
       <updated>1780970298451</updated>
     </task>
-    <option name="localTasksCounter" value="11" />
+    <task id="LOCAL-00011" summary="add: pagination bulletin, checkpoint system,Dungeon subclass, DungeonHinge method fix">
+      <option name="closed" value="true" />
+      <created>1781558950329</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1781558950435</updated>
+    </task>
+    <task id="LOCAL-00012" summary="revised writing and branch options to be cungruent with design and lore">
+      <option name="closed" value="true" />
+      <created>1782269207066</created>
+      <option name="number" value="00012" />
+      <option name="presentableId" value="LOCAL-00012" />
+      <option name="project" value="LOCAL" />
+      <updated>1782269207066</updated>
+    </task>
+    <task id="LOCAL-00013" summary="updated spell upgrades and spell choices to upgrade too as well as wrote 22 tests to ensure everything meshed well.">
+      <option name="closed" value="true" />
+      <created>1782611003903</created>
+      <option name="number" value="00013" />
+      <option name="presentableId" value="LOCAL-00013" />
+      <option name="project" value="LOCAL" />
+      <updated>1782611003903</updated>
+    </task>
+    <option name="localTasksCounter" value="14" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
@@ -214,6 +246,9 @@
     <MESSAGE value="fix: rename morality to corruption, fix Mira/Maren bugs, polish main.py narrative, bump RavenSwarm gold, add 191 passing tests&#10;&#10;- Renamed morality -&gt; corruption across wizard_core.py and main.py with clear scale comments&#10;- Fixed Mira appearing as combat option before joining (combat.py prompt now conditional)&#10;- Fixed Maren double description on entry (skip_greet param added to shop())&#10;- Fixed sort() to work with class-based locations via getattr() fallback&#10;- Fixed Ignite desc hardcoded feathers reference removed&#10;- Fixed double gold/drop counting in grind.py (combat.py is single source of truth)&#10;- Bumped RavenSwarm gold_reward 5 -&gt; 15&#10;- Rewrote main.py opening through Vardeth for narrative coherence and immersion&#10;- Added Ledger voice 'He's here' before wizard arrival&#10;- Guaranteed Sort Rune reaches player on all paths&#10;- Added mira_sister_known flag and sister lore (prodigy, busted door)&#10;- Added 191 passing tests covering corruption, merchant, wizard core, sort, combat, items, inventory, monsters" />
     <MESSAGE value="feat: add 18 new spells across all 9 schools with full combat logic and 253 passing tests&#10;&#10;- Added 2 new spells per school (18 total), each teaching a distinct Python concept&#10;- Pyromancy: Smelt (try/except), Flashpoint (bool resistance check)&#10;- Cryomancy: Glacial Grind (while/break), Nullfrost (None)&#10;- Chronomancy: Interval (range()), Recurrence (for loop)&#10;- Necromancy: Exhume (list mutation), Erasure (del)&#10;- Enhancement: Magnitude (integer operations), Surge Stack (+=)&#10;- Illusion: Mirage (variable reassignment), Doppel (is vs ==)&#10;- Conjuration: Summon Stack (list.append()), Threshold (len())&#10;- Shadow: Voidcheck (None check), Shred (string slicing)&#10;- Transmutation: Recast (type casting), Overwrite (dict.update())&#10;- Wired all 18 spells via _cast_special_spell dispatcher in wizard_core.py&#10;- Each spell prints its Python concept as inline comments during combat&#10;- Upgrade system tracked per spell (max 2 upgrades each)&#10;- last_spell_cast tracking added for Recurrence&#10;- Added make_wizard and make_target test helpers&#10;- 253 tests passing" />
     <MESSAGE value="-main.py made more revisions to story logic" />
-    <option name="LAST_COMMIT_MESSAGE" value="-main.py made more revisions to story logic" />
+    <MESSAGE value="add: pagination bulletin, checkpoint system,Dungeon subclass, DungeonHinge method fix" />
+    <MESSAGE value="revised writing and branch options to be cungruent with design and lore" />
+    <MESSAGE value="updated spell upgrades and spell choices to upgrade too as well as wrote 22 tests to ensure everything meshed well." />
+    <option name="LAST_COMMIT_MESSAGE" value="updated spell upgrades and spell choices to upgrade too as well as wrote 22 tests to ensure everything meshed well." />
   </component>
 </project>

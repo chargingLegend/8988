@@ -1089,3 +1089,472 @@ def test_empower_spell_twice_gives_level_two(monkeypatch):
   p.empower_spell_choice()
   p.empower_spell_choice()
   assert p.spell_upgrades.get("Ignite", 0) == 2
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# LEDGER TESTS
+# ══════════════════════════════════════════════════════════════════════════════
+
+from ledger import (
+  _parse_input,
+  _normalize,
+  _find_concept,
+  _is_twilight,
+  _is_off_world,
+  _is_gibberish,
+  _display_response,
+  LEDGER_RESPONSES,
+  LEDGER_UNLOCKED_FLAG,
+  LEDGER_INTRO_SEEN_FLAG,
+  LEDGER_FIRST_CALL_FLAG,
+)
+
+
+class MockLedgerPlayer:
+  def __init__(self, flags=None):
+    self.name = "Aldric"
+    self.school = "Pyromancy"
+    self.flags = flags if flags is not None else {}
+
+
+# ── _parse_input ───────────────────────────────────────────────────────────────
+
+def test_parse_valid_input_returns_question_and_ok():
+  question, status = _parse_input("ledger(what is a list)")
+  assert question == "what is a list"
+  assert status == "ok"
+
+def test_parse_valid_input_uppercase_ledger():
+  question, status = _parse_input("LEDGER(what is a list)")
+  assert question == "what is a list"
+  assert status == "ok"
+
+def test_parse_valid_input_strips_whitespace():
+  question, status = _parse_input("  ledger(what is a list)  ")
+  assert question == "what is a list"
+  assert status == "ok"
+
+def test_parse_no_ledger_prefix_returns_no_ledger():
+  question, status = _parse_input("what is a list")
+  assert question is None
+  assert status == "no_ledger"
+
+def test_parse_ledger_alone_returns_no_parens():
+  question, status = _parse_input("ledger")
+  assert question is None
+  assert status == "no_parens"
+
+def test_parse_malformed_no_closing_paren():
+  question, status = _parse_input("ledger(what is a list")
+  assert question is None
+  assert status == "malformed"
+
+def test_parse_malformed_no_opening_paren():
+  question, status = _parse_input("ledger what is a list)")
+  assert question is None
+  assert status == "malformed"
+
+def test_parse_empty_parens_returns_empty():
+  question, status = _parse_input("ledger()")
+  assert question is None
+  assert status == "empty"
+
+def test_parse_whitespace_only_parens_returns_empty():
+  question, status = _parse_input("ledger(   )")
+  assert question is None
+  assert status == "empty"
+
+def test_parse_strips_single_quotes():
+  question, status = _parse_input("ledger('what is a list')")
+  assert question == "what is a list"
+  assert status == "ok"
+
+def test_parse_strips_double_quotes():
+  question, status = _parse_input('ledger("what is a list")')
+  assert question == "what is a list"
+  assert status == "ok"
+
+def test_parse_valid_input_with_punctuation():
+  question, status = _parse_input("ledger(what is __init__?)")
+  assert question == "what is __init__?"
+  assert status == "ok"
+
+
+# ── _normalize ─────────────────────────────────────────────────────────────────
+
+def test_normalize_strips_what_is():
+  assert _normalize("what is a list") == "a list"
+
+def test_normalize_strips_what_are():
+  assert _normalize("what are dictionaries") == "dictionaries"
+
+def test_normalize_strips_explain():
+  assert _normalize("explain inheritance") == "inheritance"
+
+def test_normalize_strips_tell_me_about():
+  assert _normalize("tell me about classes") == "classes"
+
+def test_normalize_strips_how_does():
+  assert _normalize("how does a for loop work") == "a for loop work"
+
+def test_normalize_strips_how_do():
+  assert _normalize("how do lists work") == "lists work"
+
+def test_normalize_strips_question_mark():
+  assert "?" not in _normalize("what is self?")
+
+def test_normalize_strips_period():
+  assert "." not in _normalize("explain functions.")
+
+def test_normalize_lowercases():
+  assert _normalize("What Is A List") == _normalize("what is a list")
+
+def test_normalize_strips_whitespace():
+  assert _normalize("  list  ") == "list"
+
+
+# ── _find_concept ──────────────────────────────────────────────────────────────
+
+def test_find_exact_match_list():
+  assert _find_concept("list") == "list"
+
+def test_find_via_normalize_what_is_list():
+  assert _find_concept("what is a list") == "list"
+
+def test_find_via_normalize_explain_inheritance():
+  assert _find_concept("explain inheritance") == "inheritance"
+
+def test_find_dunder_init():
+  assert _find_concept("__init__") == "__init__"
+
+def test_find_self():
+  assert _find_concept("self") == "self"
+
+def test_find_class():
+  assert _find_concept("class") == "class"
+
+def test_find_for_loop():
+  assert _find_concept("for loop") == "for loop"
+
+def test_find_while_loop():
+  assert _find_concept("while loop") == "while loop"
+
+def test_find_try_except():
+  assert _find_concept("try/except") == "try/except"
+
+def test_find_if_elif_else():
+  assert _find_concept("if/elif/else") == "if/elif/else"
+
+def test_find_not_in():
+  assert _find_concept("not in") == "not in"
+
+def test_find_f_string():
+  assert _find_concept("f-string") == "f-string"
+
+def test_find_dictionary():
+  assert _find_concept("dictionary") == "dictionary"
+
+def test_find_boolean():
+  assert _find_concept("boolean") == "boolean"
+
+def test_find_integer():
+  assert _find_concept("integer") == "integer"
+
+def test_find_float():
+  assert _find_concept("float") == "float"
+
+def test_find_string():
+  assert _find_concept("string") == "string"
+
+def test_find_variable():
+  assert _find_concept("variable") == "variable"
+
+def test_find_function():
+  assert _find_concept("function") == "function"
+
+def test_find_return():
+  assert _find_concept("return") == "return"
+
+def test_find_argument():
+  assert _find_concept("argument") == "argument"
+
+def test_find_parameter():
+  assert _find_concept("parameter") == "parameter"
+
+def test_find_break():
+  assert _find_concept("break") == "break"
+
+def test_find_continue():
+  assert _find_concept("continue") == "continue"
+
+def test_find_pass():
+  assert _find_concept("pass") == "pass"
+
+def test_find_import():
+  assert _find_concept("import") == "import"
+
+def test_find_module():
+  assert _find_concept("module") == "module"
+
+def test_find_scope():
+  assert _find_concept("scope") == "scope"
+
+def test_find_index():
+  assert _find_concept("index") == "index"
+
+def test_find_indexing():
+  assert _find_concept("indexing") == "indexing"
+
+def test_find_slice():
+  assert _find_concept("slice") == "slice"
+
+def test_find_slicing():
+  assert _find_concept("slicing") == "slicing"
+
+def test_find_concatenation():
+  assert _find_concept("concatenation") == "concatenation"
+
+def test_find_len():
+  assert _find_concept("len") == "len"
+
+def test_find_range():
+  assert _find_concept("range") == "range"
+
+def test_find_type():
+  assert _find_concept("type") == "type"
+
+def test_find_none():
+  assert _find_concept("none") == "none"
+
+def test_find_method():
+  assert _find_concept("method") == "method"
+
+def test_find_attribute():
+  assert _find_concept("attribute") == "attribute"
+
+def test_find_in():
+  assert _find_concept("in") == "in"
+
+def test_find_operators():
+  assert _find_concept("operators") == "operators"
+
+def test_find_iteration():
+  assert _find_concept("iteration") == "iteration"
+
+def test_find_returns_none_for_unknown():
+  assert _find_concept("metaclass") is None
+
+def test_find_returns_none_for_empty():
+  assert _find_concept("") is None
+
+def test_find_returns_none_for_niche_concept():
+  assert _find_concept("generator") is None
+
+
+# ── _is_twilight ───────────────────────────────────────────────────────────────
+
+def test_twilight_ledger_exact():
+  assert _is_twilight("twilight ledger") is True
+
+def test_the_twilight_ledger():
+  assert _is_twilight("the twilight ledger") is True
+
+def test_twilight_alone():
+  assert _is_twilight("twilight") is True
+
+def test_drakkon():
+  assert _is_twilight("drakkon") is True
+
+def test_drakkon_tarkesh():
+  assert _is_twilight("drakkon tarkesh") is True
+
+def test_twilight_in_sentence():
+  assert _is_twilight("tell me about the twilight ledger") is True
+
+def test_non_twilight_returns_false():
+  assert _is_twilight("what is a list") is False
+
+def test_ledger_alone_not_twilight():
+  assert _is_twilight("ledger") is False
+
+def test_empty_string_not_twilight():
+  assert _is_twilight("") is False
+
+
+# ── _is_off_world ──────────────────────────────────────────────────────────────
+
+def test_weather_is_off_world():
+  assert _is_off_world("weather") is True
+
+def test_sports_is_off_world():
+  assert _is_off_world("sports") is True
+
+def test_news_is_off_world():
+  assert _is_off_world("news") is True
+
+def test_politics_is_off_world():
+  assert _is_off_world("politics") is True
+
+def test_movie_is_off_world():
+  assert _is_off_world("movie") is True
+
+def test_music_is_off_world():
+  assert _is_off_world("music") is True
+
+def test_stock_is_off_world():
+  assert _is_off_world("stock") is True
+
+def test_crypto_is_off_world():
+  assert _is_off_world("crypto") is True
+
+def test_in_world_question_not_off_world():
+  assert _is_off_world("what is a list") is False
+
+def test_empty_string_not_off_world():
+  assert _is_off_world("") is False
+
+
+# ── _is_gibberish ──────────────────────────────────────────────────────────────
+
+def test_numbers_only_is_gibberish():
+  assert _is_gibberish("1234") is True
+
+def test_single_char_is_gibberish():
+  assert _is_gibberish("x") is True
+
+def test_two_chars_is_gibberish():
+  assert _is_gibberish("ab") is True
+
+def test_empty_string_is_gibberish():
+  assert _is_gibberish("") is True
+
+def test_whitespace_only_is_gibberish():
+  assert _is_gibberish("   ") is True
+
+def test_valid_question_not_gibberish():
+  assert _is_gibberish("what is a list") is False
+
+def test_single_valid_word_not_gibberish():
+  assert _is_gibberish("list") is False
+
+def test_symbols_only_is_gibberish():
+  assert _is_gibberish("!@#") is True
+
+
+# ── LEDGER_RESPONSES structure ─────────────────────────────────────────────────
+
+def test_all_concepts_are_tuples():
+  for key, value in LEDGER_RESPONSES.items():
+    assert isinstance(value, tuple), f"{key} is not a tuple"
+
+def test_all_concepts_have_four_beats():
+  for key, value in LEDGER_RESPONSES.items():
+    assert len(value) == 4, f"{key} does not have 4 beats"
+
+def test_all_beats_are_strings():
+  for key, value in LEDGER_RESPONSES.items():
+    for i, beat in enumerate(value):
+      assert isinstance(beat, str), f"{key} beat {i} is not a string"
+
+def test_all_lore_beats_non_empty():
+  for key, value in LEDGER_RESPONSES.items():
+    assert len(value[0]) > 0, f"{key} lore beat is empty"
+
+def test_all_doc_beats_non_empty():
+  for key, value in LEDGER_RESPONSES.items():
+    assert len(value[1]) > 0, f"{key} documentation beat is empty"
+
+def test_all_plain_beats_non_empty():
+  for key, value in LEDGER_RESPONSES.items():
+    assert len(value[2]) > 0, f"{key} plain terms beat is empty"
+
+def test_all_example_beats_non_empty():
+  for key, value in LEDGER_RESPONSES.items():
+    assert len(value[3]) > 0, f"{key} example beat is empty"
+
+def test_all_example_beats_contain_code():
+  for key, value in LEDGER_RESPONSES.items():
+    assert "=" in value[3] or "print" in value[3] or "#" in value[3], (
+      f"{key} example beat does not appear to contain code"
+    )
+
+def test_expected_concepts_present():
+  expected = [
+    "__init__", "self", "class", "inheritance", "function", "return",
+    "variable", "string", "integer", "float", "boolean", "list",
+    "dictionary", "tuple", "set", "argument", "parameter", "for loop",
+    "while loop", "if", "if/elif/else", "break", "continue", "pass",
+    "try", "try/except", "except", "import", "module", "scope",
+    "index", "indexing", "slice", "slicing", "concatenation", "f-string",
+    "len", "range", "type", "none", "method", "attribute", "in",
+    "not in", "operators", "iteration"
+  ]
+  for concept in expected:
+    assert concept in LEDGER_RESPONSES, f"{concept} missing from LEDGER_RESPONSES"
+
+def test_paired_concepts_share_same_response():
+  assert LEDGER_RESPONSES["argument"] == LEDGER_RESPONSES["parameter"]
+  assert LEDGER_RESPONSES["try"] == LEDGER_RESPONSES["try/except"]
+  assert LEDGER_RESPONSES["try"] == LEDGER_RESPONSES["except"]
+  assert LEDGER_RESPONSES["index"] == LEDGER_RESPONSES["indexing"]
+  assert LEDGER_RESPONSES["slice"] == LEDGER_RESPONSES["slicing"]
+  assert LEDGER_RESPONSES["if"] == LEDGER_RESPONSES["if/elif/else"]
+  assert LEDGER_RESPONSES["import"] == LEDGER_RESPONSES["module"]
+  assert LEDGER_RESPONSES["method"] == LEDGER_RESPONSES["attribute"]
+  assert LEDGER_RESPONSES["in"] == LEDGER_RESPONSES["not in"]
+
+
+# ── _display_response ──────────────────────────────────────────────────────────
+
+def test_display_does_not_raise_for_any_concept(capsys):
+  for concept in LEDGER_RESPONSES:
+    _display_response(concept)
+    captured = capsys.readouterr()
+    assert len(captured.out) > 0, f"{concept} produced no output"
+
+def test_display_contains_lore(capsys):
+  _display_response("__init__")
+  captured = capsys.readouterr()
+  assert "spark of life" in captured.out
+
+def test_display_contains_documentation(capsys):
+  _display_response("list")
+  captured = capsys.readouterr()
+  assert "mutable" in captured.out
+
+def test_display_contains_example_divider(capsys):
+  _display_response("boolean")
+  captured = capsys.readouterr()
+  assert "---" in captured.out
+
+
+# ── flag constants ─────────────────────────────────────────────────────────────
+
+def test_unlocked_flag_is_string():
+  assert isinstance(LEDGER_UNLOCKED_FLAG, str)
+
+def test_intro_flag_is_string():
+  assert isinstance(LEDGER_INTRO_SEEN_FLAG, str)
+
+def test_first_call_flag_is_string():
+  assert isinstance(LEDGER_FIRST_CALL_FLAG, str)
+
+def test_flags_are_distinct():
+  flags = {LEDGER_UNLOCKED_FLAG, LEDGER_INTRO_SEEN_FLAG, LEDGER_FIRST_CALL_FLAG}
+  assert len(flags) == 3
+
+def test_mock_ledger_player_unlocked():
+  player = MockLedgerPlayer(flags={LEDGER_UNLOCKED_FLAG: True})
+  assert player.flags.get(LEDGER_UNLOCKED_FLAG) is True
+
+def test_mock_ledger_player_locked_by_default():
+  player = MockLedgerPlayer()
+  assert player.flags.get(LEDGER_UNLOCKED_FLAG) is None
+
+def test_mock_ledger_player_intro_not_seen_by_default():
+  player = MockLedgerPlayer()
+  assert player.flags.get(LEDGER_INTRO_SEEN_FLAG) is None
+
+def test_mock_ledger_player_first_call_not_set_by_default():
+  player = MockLedgerPlayer()
+  assert player.flags.get(LEDGER_FIRST_CALL_FLAG) is None

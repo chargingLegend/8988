@@ -2,8 +2,7 @@ def hub(player, location):
   from systems.grind import grind
   from combat import simple_combat
   from spawn import EnemySpawner
-  from systems.checkpoint import load_checkpoint, apply_checkpoint, checkpoint_exists
-
+  from ledger import call_ledger
 
   location_key = location.__name__.lower()
   grind_cap = location.level_cap + 2
@@ -17,24 +16,29 @@ def hub(player, location):
 
     if location.grind_available and player.level < grind_cap:
       options[str(option_num)] = 'grind'
-      print(f"[{option_num}] Train     — push further into the dark")
+      print(f"[{option_num}] Train        — push further into the dark")
       option_num += 1
 
     if 'sort' in player.spells:
       options[str(option_num)] = 'sort'
-      print(f"[{option_num}] Sort      — read the composition of this place")
+      print(f"[{option_num}] Sort         — read the composition of this place")
       option_num += 1
 
     if player.flags.get('maren_available'):
       options[str(option_num)] = 'trade'
-      print(f"[{option_num}] Trade     — find Maren")
+      print(f"[{option_num}] Trade        — find Maren")
+      option_num += 1
+
+    if player.flags.get('ledger_unlocked'):
+      options[str(option_num)] = 'ledger'
+      print(f"[{option_num}] The Ledger   — it has been listening")
       option_num += 1
 
     if (player.flags.get(f'{location_key}_story_done')
         and player.level >= location.level_cap
         and not player.flags.get(f'{location_key}_boss_defeated')):
       options[str(option_num)] = 'challenge'
-      print(f"[{option_num}] Challenge — something here is waiting for you")
+      print(f"[{option_num}] Challenge    — something here is waiting for you")
       option_num += 1
 
     options[str(option_num)] = 'leave'
@@ -57,6 +61,9 @@ def hub(player, location):
     elif action == 'trade':
       from merchant import Merchant
       Merchant.visit(player)
+
+    elif action == 'ledger':
+      call_ledger(player)
 
     elif action == 'challenge':
       spawner = EnemySpawner(location)
