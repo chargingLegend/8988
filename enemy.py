@@ -706,6 +706,222 @@ class Criminal(Humanoid):
     return dmg
 
 
+
+class Consequential(Monster):
+  def __init__(self, weakened=False):
+    if weakened:
+      super().__init__(
+        name="Half-Formed Consequential",
+        hp=42,
+        desc="A transformation that never finished. Still enough.",
+        exp_value=60,
+        atk=7,
+        defense=2,
+        level=4,
+        gold_reward=0
+      )
+    else:
+      super().__init__(
+        name="The Consequential",
+        hp=85,
+        desc="Black fur through torn clothing. Three eyes on the edge of a face. A serrated mandible.",
+        exp_value=90,
+        atk=9,
+        defense=3,
+        level=5,
+        gold_reward=0
+      )
+    self.weakened = weakened
+
+  def attack(self, target):
+    target_low_hp = target.hp <= target.max_hp * 0.25
+
+    if target_low_hp:
+      dmg = random.randint(10, 14) + self.atk
+      print(f"The tongue shoots from the dark — tiny hands where barbs should be.")
+      print(f"Each fingertip pulls in a direction that doesn't agree with the others. {dmg} damage!")
+      target.take_damage(dmg, "physical")
+      return dmg
+
+    if random.randint(1, 100) > 60:
+      dmg = random.randint(6, 10) + self.atk
+      print(f"The serrated mandible strikes from the wrong side. {dmg} damage!")
+      target.take_damage(dmg, "physical")
+      return dmg
+
+    dmg = random.randint(4, 8) + self.atk
+    print(f"{self.name} lunges — appetite, not purpose. {dmg} damage!")
+    target.take_damage(dmg, "physical")
+    return dmg
+
+
+class MotherRaven(Monster):
+  def __init__(self):
+    super().__init__(
+      name="Mother Raven",
+      hp=110,
+      desc="Not what made the others. What the others are trying to become.",
+      exp_value=100,
+      atk=7,
+      defense=2,
+      level=5,
+      gold_reward=0
+    )
+    self.turn_count = 0
+
+  def attack(self, target):
+    self.turn_count += 1
+
+    if self.turn_count % 7 == 0:
+      dmg = random.randint(8, 12) + self.atk
+      print(f"She opens her beak. What comes out isn't a sound birds make.")
+      print(f"The swarm answers — every surface empties at once. {dmg} damage!")
+      target.take_damage(dmg, "physical")
+      return dmg
+
+    if random.randint(1, 100) > 55:
+      dmg = random.randint(6, 9) + self.atk
+      print(f"Her wingspan fills the space between walls. The gust alone staggers you. {dmg} damage!")
+      target.take_damage(dmg, "physical")
+      return dmg
+
+    dmg = random.randint(3, 7) + self.atk
+    print(f"Talons rake down from above. {dmg} damage!")
+    target.take_damage(dmg, "physical")
+    return dmg
+
+
+class EnforcerCommander(Humanoid):
+  def __init__(self, ravens_active=False):
+    super().__init__(
+      name="Enforcer Commander",
+      hp=100,
+      desc="Dark black and red regalia. A partially toothed grin in the shadow of a hood.",
+      exp_value=120,
+      atk=8,
+      defense=5,
+      level=6,
+      gold_reward=0,
+      loot_table=[],
+      abilities=["Mana Drain"]
+    )
+    self.mana = 30
+    self.max_mana = 30
+    self.faction = "Enforcers"
+    self.spells = ["Mana Drain"]
+    self.ravens_active = ravens_active
+    self.turn_count = 0
+
+  def attack(self, target):
+    self.turn_count += 1
+
+    if self.ravens_active and self.turn_count % 7 == 0:
+      dmg = random.randint(6, 10)
+      print(f"Wings. The swarm pours into the square on a rhythm all its own. {dmg} damage!")
+      target.take_damage(dmg, "physical")
+      return dmg
+
+    target_low_hp = target.hp <= target.max_hp * 0.25
+
+    if target_low_hp and self.mana >= 8:
+      self.mana -= 8
+      dmg = random.randint(12, 16) + self.atk
+      print(f"{self.name} sees the opening. He doesn't hurry toward it.")
+      print(f"The strike lands like a verdict. {dmg} damage! Mana: {self.mana}/{self.max_mana}")
+      target.take_damage(dmg, "arcane")
+      return dmg
+
+    if self.mana >= 5 and random.randint(1, 100) > 50:
+      self.mana -= 5
+      dmg = random.randint(7, 11) + self.atk
+      print(f"{self.name} casts Mana Drain — practiced, economical. {dmg} damage! Mana: {self.mana}/{self.max_mana}")
+      target.take_damage(dmg, "arcane")
+      return dmg
+
+    dmg = random.randint(4, 8) + self.atk
+    print(f"{self.name} strikes without wasted motion. {dmg} damage!")
+    target.take_damage(dmg, "physical")
+    return dmg
+
+
+class EnforcerGangSergeant(Humanoid):
+  def __init__(self):
+    super().__init__(
+      name="Enforcer Gang Sergeant",
+      hp=70,
+      desc="The one who tells the batons where to swing.",
+      exp_value=55,
+      atk=7,
+      defense=4,
+      level=4,
+      gold_reward=20,
+      loot_table=["Enforcer Baton"],
+      abilities=["Mana Drain"]
+    )
+    self.mana = 20
+    self.max_mana = 20
+    self.faction = "Enforcers"
+    self.spells = ["Mana Drain"]
+
+  def attack(self, target):
+    target_low_hp = target.hp <= target.max_hp * 0.25
+
+    if target_low_hp and self.mana >= 6:
+      self.mana -= 6
+      dmg = random.randint(9, 13) + self.atk
+      print(f"{self.name} barks the order to himself and follows it. {dmg} damage! Mana: {self.mana}/{self.max_mana}")
+      target.take_damage(dmg, "arcane")
+      return dmg
+
+    dmg = random.randint(4, 8) + self.atk
+    print(f"{self.name} swings with a sergeant's efficiency. {dmg} damage!")
+    target.take_damage(dmg, "physical")
+    return dmg
+
+
+class Dara(Humanoid):
+  def __init__(self):
+    super().__init__(
+      name="Dara Rennick",
+      hp=90,
+      desc="Twilight Ledger operative. Warm right up until she isn't.",
+      exp_value=85,
+      atk=8,
+      defense=3,
+      level=5,
+      gold_reward=0,
+      loot_table=[],
+      abilities=["Crimson Turn"]
+    )
+    self.mana = 25
+    self.max_mana = 25
+    self.faction = "Twilight Ledger"
+    self.spells = ["Crimson Turn"]
+
+  def attack(self, target):
+    target_low_hp = target.hp <= target.max_hp * 0.25
+
+    if target_low_hp and self.mana >= 10:
+      self.mana -= 10
+      dmg = random.randint(12, 16) + self.atk
+      print(f"Her palm comes up, glowing in an outline of red.")
+      print(f"A slow turning gesture. The air around you agrees with her. {dmg} damage! Mana: {self.mana}/{self.max_mana}")
+      target.take_damage(dmg, "arcane")
+      return dmg
+
+    if self.mana >= 5 and random.randint(1, 100) > 50:
+      self.mana -= 5
+      dmg = random.randint(6, 10) + self.atk
+      print(f"She moves the way she talks — no wasted syllables. {dmg} damage! Mana: {self.mana}/{self.max_mana}")
+      target.take_damage(dmg, "arcane")
+      return dmg
+
+    dmg = random.randint(4, 8) + self.atk
+    print(f"The knife was in her hand before you saw her draw it. {dmg} damage!")
+    target.take_damage(dmg, "physical")
+    return dmg
+
+
 BESTIARY = {
   "Rat": Rat,
   "Bat": Bat,
@@ -718,4 +934,9 @@ BESTIARY = {
   "Wraith": Wraith,
   "Troll King": TrollKing,
   "Criminal": Criminal,
+  "The Consequential": Consequential,
+  "Mother Raven": MotherRaven,
+  "Enforcer Commander": EnforcerCommander,
+  "Enforcer Gang Sergeant": EnforcerGangSergeant,
+  "Dara Rennick": Dara,
 }
