@@ -27,6 +27,18 @@ def input(prompt=""):
   return builtins.input(prompt)
 
 
+def resolve_ch1_route(flags):
+  if (flags.get('promised_sister_search')
+      and not flags.get('companion_mira')
+      and not flags.get('companion_duo')
+      and not flags.get('dara_dungeon')):
+    return 'solo_promise'
+  if (flags.get('companion_mira')
+      and flags.get('companion_duo')):
+    return 'duo'
+  return 'default'
+
+
 SPELL_DESCRIPTIONS = {
   "Pyromancy": {
     "Ignite": (

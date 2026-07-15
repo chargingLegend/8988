@@ -857,7 +857,9 @@ def test_bestiary_exists_and_replaces_monster_db():
 
 def test_bestiary_has_all_expected_entries():
   expected = {"Rat", "Bat", "Goblin", "Raven Swarm", "Wolf", "Skeleton",
-              "Giant Spider", "Cave Troll", "Wraith", "Troll King", "Criminal"}
+              "Giant Spider", "Cave Troll", "Wraith", "Troll King", "Criminal",
+              "The Consequential", "Mother Raven", "Enforcer Commander",
+              "Enforcer Gang Sergeant", "Dara Rennick"}
   assert set(BESTIARY.keys()) == expected
 
 
@@ -1558,3 +1560,90 @@ def test_mock_ledger_player_intro_not_seen_by_default():
 def test_mock_ledger_player_first_call_not_set_by_default():
   player = MockLedgerPlayer()
   assert player.flags.get(LEDGER_FIRST_CALL_FLAG) is None
+
+# == CH1 ROUTE DISPATCH TESTS (July 14) ====================
+
+ROUTE_TABLE = [
+  (False, False, False, False, 'default'),
+  (True, False, False, False, 'solo_promise'),
+  (False, True, False, False, 'default'),
+  (False, False, True, False, 'default'),
+  (False, False, False, True, 'default'),
+  (True, True, False, False, 'default'),
+  (True, False, True, False, 'default'),
+  (True, False, False, True, 'default'),
+  (False, True, True, False, 'duo'),
+  (False, True, False, True, 'default'),
+  (False, False, True, True, 'default'),
+  (True, True, True, False, 'duo'),
+  (True, True, False, True, 'default'),
+  (True, False, True, True, 'default'),
+  (False, True, True, True, 'duo'),
+  (True, True, True, True, 'duo'),
+]
+
+@pytest.mark.parametrize(
+  "promise,mira,duo,dara,expected", ROUTE_TABLE,
+  ids=[f"P{int(p)}_M{int(m)}_D{int(d)}_Dr{int(dr)}"
+       for p, m, d, dr, _ in ROUTE_TABLE])
+def test_ch1_route_dispatch(promise, mira, duo, dara, expected):
+  from main import resolve_ch1_route
+  flags = {
+    'promised_sister_search': promise,
+    'companion_mira': mira,
+    'companion_duo': duo,
+    'dara_dungeon': dara,
+  }
+  assert resolve_ch1_route(flags) == expected
+
+
+# == NEW CH1 ENEMY TESTS (July 14) =========================
+
+from enemy import (Consequential, MotherRaven, Dara,
+                   EnforcerCommander, EnforcerGangSergeant)
+
+
+def test_new_ch1_monsters_inherit_monster():
+  assert issubclass(Consequential, Monster)
+  assert issubclass(MotherRaven, Monster)
+
+def test_new_ch1_humanoids_inherit_humanoid():
+  for cls in (Dara, EnforcerCommander, EnforcerGangSergeant):
+    assert issubclass(cls, Humanoid), cls.__name__
+
+def test_consequential_weakened_variant():
+  full = Consequential()
+  weak = Consequential(weakened=True)
+  assert weak.hp < full.hp
+  assert weak.hp > 0
+  assert weak.name != full.name
+
+def test_consequential_default_is_full_form():
+  c = Consequential()
+  assert c.name == "The Consequential"
+
+def test_dara_boss_stats():
+  d = Dara()
+  assert d.name == "Dara Rennick"
+  assert d.hp == 90
+  assert "Crimson Turn" in d.abilities
+  assert "Crimson Turn" in d.spells
+  assert d.faction == "Twilight Ledger"
+
+def test_mother_raven_instantiates():
+  m = MotherRaven()
+  assert m.name == "Mother Raven"
+  assert m.hp > 0
+  assert m.is_alive()
+
+def test_every_bestiary_attack_deals_and_returns_damage():
+  for name, cls in BESTIARY.items():
+    attacker = cls()
+    target = Rat()
+    target.hp = 500
+    target.max_hp = 500
+    target.defense = 0
+    dealt = attacker.attack(target)
+    assert isinstance(dealt, int), f"{name}.attack returned no number"
+    assert dealt > 0, f"{name}.attack returned zero"
+    assert target.hp < 500, f"{name}.attack dealt no damage"
