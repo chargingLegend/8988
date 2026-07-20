@@ -28,7 +28,8 @@ def save_checkpoint(player):
     "corruption": player.corruption,
     "sort_acquired_by": player.sort_acquired_by,
     "last_killed": player.last_killed,
-    "inventory": [item.name for item in player.inventory.items],
+    "inventory": [item.name if hasattr(item, "name") else item
+                  for item in player.inventory.items],
   }
   with open(CHECKPOINT_FILE, "w") as f:
     json.dump(data, f, indent=2)
@@ -71,3 +72,37 @@ def apply_checkpoint(player, data):
   player.sort_acquired_by = data["sort_acquired_by"]
   player.last_killed = data["last_killed"]
   player.status_effects = []
+  _restore_inventory(player, data.get("inventory", []))
+
+
+def _item_registry():
+  from items import (HPPotion, ManaPotion, ManabdaPotion, PassRune,
+                     ExceptVial, FinallyFlask, Cloak, LegendaryCloak,
+                     Staff, Rod, Scepter)
+  registry = {
+    "Pass Rune": PassRune,
+    "Except Vial": ExceptVial,
+    "Finally Flask": FinallyFlask,
+    "Traveler's Cloak": Cloak,
+    "Cloak of Unmaking": LegendaryCloak,
+    "Gnarled Staff": Staff,
+    "Apprentice Rod": Rod,
+    "Iron Scepter": Scepter,
+  }
+  for tier in ("I", "II", "III", "IV"):
+    registry[f"HP Potion {tier}"] = lambda t=tier: HPPotion(t)
+    registry[f"Mana Potion {tier}"] = lambda t=tier: ManaPotion(t)
+    if tier != "IV":
+      registry[f"Manabda Potion {tier}"] = lambda t=tier: ManabdaPotion(t)
+  return registry
+
+
+def _restore_inventory(player, item_names):
+  registry = _item_registry()
+  player.inventory.items = []
+  for name in item_names:
+    factory = registry.get(name)
+    if factory:
+      player.inventory.add(factory())
+    else:
+      player.inventory.add(name)
