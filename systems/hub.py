@@ -2,7 +2,7 @@ def hub(player, location):
   from systems.grind import grind
   from combat import simple_combat
   from spawn import EnemySpawner
-  from ledger import call_ledger
+  from systems.checkpoint import reload_from_death
 
   location_key = location.__name__.lower()
   grind_cap = location.level_cap + 2
@@ -16,30 +16,29 @@ def hub(player, location):
 
     if location.grind_available and player.level < grind_cap:
       options[str(option_num)] = 'grind'
-      print(f"[{option_num}] Train        — push further into the dark")
+      print(f"[{option_num}] Train     — push further into the dark")
       option_num += 1
 
     if 'sort' in player.spells:
       options[str(option_num)] = 'sort'
-      print(f"[{option_num}] Sort         — read the composition of this place")
+      print(f"[{option_num}] Sort      — read the composition of this place")
       option_num += 1
 
     if player.flags.get('maren_available'):
       options[str(option_num)] = 'trade'
-      print(f"[{option_num}] Trade        — find Maren")
-      option_num += 1
-
-    if player.flags.get('ledger_unlocked'):
-      options[str(option_num)] = 'ledger'
-      print(f"[{option_num}] The Ledger   — it has been listening")
+      print(f"[{option_num}] Trade     — find Maren")
       option_num += 1
 
     if (player.flags.get(f'{location_key}_story_done')
         and player.level >= location.level_cap
         and not player.flags.get(f'{location_key}_boss_defeated')):
       options[str(option_num)] = 'challenge'
-      print(f"[{option_num}] Challenge    — something here is waiting for you")
+      print(f"[{option_num}] Challenge — something here is waiting for you")
       option_num += 1
+
+    options[str(option_num)] = 'rewind'
+    print(f"[{option_num}] Rewind to last checkpoint")
+    option_num += 1
 
     options[str(option_num)] = 'leave'
     print(f"[{option_num}] Move on")
@@ -62,18 +61,50 @@ def hub(player, location):
       from merchant import Merchant
       Merchant.visit(player)
 
-    elif action == 'ledger':
-      call_ledger(player)
-
     elif action == 'challenge':
       spawner = EnemySpawner(location)
       enemy, is_boss = spawner.spawn(location.level_cap)
       print(f"\nIt steps forward.")
       print(f"\n{enemy}")
       simple_combat(player, enemy)
+      if not player.is_alive():
+        reload_from_death(player)
       if not enemy.is_alive():
         player.flags[f'{location_key}_boss_defeated'] = True
         print(f"\nIt's done.")
+
+    elif action == 'rewind':
+      print("\n\nraise CheckpointWarning:")
+      print("  You are about to return to the previous checkpoint.")
+      print("  There is only one save file.")
+      print("  It will be overwritten.")
+      print("  All stats, items, and choices made since that")
+      print("  checkpoint will be lost.")
+      print("  This cannot be undone.")
+
+      print("\n[1] except — catch this. Stay where you are.")
+      print("[2] Accept the loss. Return to the checkpoint.")
+
+      rewind_choice = input("\n> ").strip()
+
+      if rewind_choice == "2":
+        from systems.checkpoint import load_checkpoint, apply_checkpoint
+        data = load_checkpoint()
+        if data is None:
+          print("\nThere is no checkpoint behind you.")
+          print("There is only forward.")
+        else:
+          print("\nYou let it happen.")
+          print("The world unwinds around you.")
+          print("Everything since — undone.")
+          print("Not forgotten. Undone.")
+          print("There's a difference.")
+          print("You're the only one who remembers which.")
+          apply_checkpoint(player, data)
+          break
+      else:
+        print("\nCaught. Handled.")
+        print("You stay in the moment you built.")
 
     elif action == 'leave':
       print("\nYou turn away from it.")

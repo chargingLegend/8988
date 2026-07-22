@@ -24,7 +24,7 @@ class Dungeon(Location):
 
 class Vardeth(Town):
   level_cap = 4
-  boss = "Enforcer_Gang_Sergeant"
+  boss = "Enforcer Gang Sergeant"
   enemy_table = [("Enforcer", 70), ("Criminal", 30)]
   common = ["broken_pavement", "paper_scrap", "empty_bottle"]
   uncommon = ["silver_pendant", "half_filled_ink_bottle"]

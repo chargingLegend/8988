@@ -4,7 +4,23 @@ import os
 CHECKPOINT_FILE = "checkpoint.json"
 
 
-def save_checkpoint(player):
+class RestartGame(Exception):
+  pass
+
+
+class CheckpointReload(Exception):
+  def __init__(self, location_id):
+    self.location_id = location_id
+
+
+RESUME_POINTS = {}
+
+
+def register_resume_point(location_id, callback):
+  RESUME_POINTS[location_id] = callback
+
+
+def save_checkpoint(player, location_id):
   data = {
     "name": player.name,
     "level": player.level,
@@ -30,6 +46,7 @@ def save_checkpoint(player):
     "last_killed": player.last_killed,
     "inventory": [item.name if hasattr(item, "name") else item
                   for item in player.inventory.items],
+    "location_id": location_id,
   }
   with open(CHECKPOINT_FILE, "w") as f:
     json.dump(data, f, indent=2)
@@ -46,6 +63,24 @@ def load_checkpoint():
 
 def checkpoint_exists():
   return os.path.exists(CHECKPOINT_FILE)
+
+
+def delete_checkpoint():
+  if os.path.exists(CHECKPOINT_FILE):
+    os.remove(CHECKPOINT_FILE)
+
+
+def reload_from_death(player):
+  print("\nDarkness.")
+  print("The Path ends here.")
+  print("Or perhaps it simply begins somewhere else.")
+  data = load_checkpoint()
+  if data is None:
+    exit()
+  apply_checkpoint(player, data)
+  print("\nThe world unwinds around you.")
+  print("You're back where the last checkpoint held.")
+  raise CheckpointReload(data.get("location_id"))
 
 
 def apply_checkpoint(player, data):

@@ -939,4 +939,5 @@ BESTIARY = {
   "Enforcer Commander": EnforcerCommander,
   "Enforcer Gang Sergeant": EnforcerGangSergeant,
   "Dara Rennick": Dara,
+  "Enforcer": Enforcer,
 }

@@ -859,7 +859,7 @@ def test_bestiary_has_all_expected_entries():
   expected = {"Rat", "Bat", "Goblin", "Raven Swarm", "Wolf", "Skeleton",
               "Giant Spider", "Cave Troll", "Wraith", "Troll King", "Criminal",
               "The Consequential", "Mother Raven", "Enforcer Commander",
-              "Enforcer Gang Sergeant", "Dara Rennick"}
+              "Enforcer Gang Sergeant", "Dara Rennick", "Enforcer"}
   assert set(BESTIARY.keys()) == expected
 
 
